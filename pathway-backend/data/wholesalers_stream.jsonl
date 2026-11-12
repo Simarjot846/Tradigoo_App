@@ -1,0 +1,4 @@
+{"wholesaler_id": "W001", "product_name": "Organic Wheat", "price": 25.5, "rating": 4.8, "carbon_saved_kg": 150.0, "waste_reduced_kg": 20.0, "delivery_time_hrs": 24, "description": "High-quality organic wheat from Punjab.", "region": "Punjab"}
+{"wholesaler_id": "W002", "product_name": "Sustainable Cotton", "price": 45.0, "rating": 4.5, "carbon_saved_kg": 300.0, "waste_reduced_kg": 50.0, "delivery_time_hrs": 48, "description": "Rain-fed sustainable cotton bales.", "region": "Gujarat"}
+{"wholesaler_id": "W003", "product_name": "Eco-friendly Jute Bags", "price": 5.0, "rating": 4.9, "carbon_saved_kg": 500.0, "waste_reduced_kg": 100.0, "delivery_time_hrs": 12, "description": "100% biodegradable jute packaging.", "region": "West Bengal"}
+{"wholesaler_id": "W004", "product_name": "Solar Panels", "price": 300.0, "rating": 5.0, "carbon_saved_kg": 5000.0, "waste_reduced_kg": 100.0, "delivery_time_hrs": 24, "description": "High efficiency solar panels", "region": "Delhi"}

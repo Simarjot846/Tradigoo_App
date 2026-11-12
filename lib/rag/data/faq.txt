@@ -1,0 +1,74 @@
+# Tradigoo Frequently Asked Questions (FAQ)
+
+## 1. What is Tradigoo?
+
+Tradigoo is a secure, transparent platform for bulk trade that connects small retailers directly with verified wholesalers, using escrow-based payments and AI-assisted decision support.
+
+---
+
+## 2. How does escrow work?
+
+When a retailer places an order, the payment is held securely on the platform. Funds are released to the wholesaler only after delivery confirmation and completion of the inspection window without dispute.
+
+---
+
+## 3. When does the wholesaler receive payment?
+
+Payment is released after:
+- Delivery is confirmed through OTP, and
+- The inspection window closes without dispute, or
+- A dispute is resolved in favor of the wholesaler.
+
+---
+
+## 4. How can I track my order?
+
+Retailers receive tracking details once the shipment is dispatched. The order status can be monitored directly from the platform dashboard.
+
+---
+
+## 5. What should I do if I receive damaged goods?
+
+You must raise a dispute within the inspection window and record a live unboxing video through the platform. Uploaded or pre-recorded videos are not accepted.
+
+---
+
+## 6. Why is live video recording required for disputes?
+
+Live recording ensures authenticity and prevents manipulation of evidence. It helps the AI system fairly evaluate damage or quantity mismatches.
+
+---
+
+## 7. What happens after I raise a dispute?
+
+The AI system performs an initial review of the live recording. If unresolved, the case is escalated for manual verification before a final decision is made.
+
+---
+
+## 8. Can sellers request direct payment outside the platform?
+
+No. All payments must go through Tradigoo’s escrow system. Off-platform payments are not permitted.
+
+---
+
+## 9. What if delivery fails?
+
+If delivery fails due to incorrect address or unavailability, the shipment may be rescheduled or returned. Escrow funds remain on hold until the issue is resolved.
+
+---
+
+## 10. Are delivery timelines guaranteed?
+
+Delivery timelines depend on courier partners. Tradigoo provides tracking visibility but does not guarantee exact transit duration.
+
+---
+
+## 11. How are sellers verified?
+
+Sellers must complete identity and business verification before listing products on the platform.
+
+---
+
+## 12. Can disputes be raised after the inspection window closes?
+
+No. Disputes must be raised within the defined inspection window after delivery confirmation.

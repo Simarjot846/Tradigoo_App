@@ -1,0 +1,1002 @@
+# TRADIGOO — COMPLETE NATIVE ANDROID APP DEVELOPMENT & PRODUCTION TRANSFORMATION
+
+Act as a Principal Software Architect, Senior Kotlin Android Developer, Backend Engineer, Database Architect, AI Engineer, Security Engineer, and Professional UI/UX Designer.
+
+Your responsibility is to transform my existing Tradigoo native Android application into a fully functional, secure, modern, and production-quality B2B sourcing marketplace.
+
+This is not a simple redesign or code-generation task. I want you to inspect the existing project, understand its architecture, identify every incomplete feature, fix existing bugs, connect real data, implement missing functionality, and test the complete application.
+
+**EXISTING WEBSITE:** https://tradigoo.vercel.app/
+
+The existing Tradigoo website and its backend contain business functionality and potentially genuine user, product, supplier, and order records.
+
+The Android application must use the same existing backend and database. Do not create an independent marketplace or a second database.
+
+**IMPORTANT PROJECT RULES:**
+- Work on the dedicated Android application branch.
+- Never overwrite or modify the website's main branch.
+- Preserve existing working functionality.
+- Coordinate any required backend changes carefully.
+- Use Kotlin, Jetpack Compose, Material 3, and the existing MVVM architecture.
+- Do not convert the application into a WebView or Capacitor wrapper.
+
+---
+
+# 1. COMPLETE PROJECT AUDIT
+
+Before implementing anything, inspect the entire repository.
+
+Understand:
+
+- Android project structure.
+- Kotlin source files.
+- Jetpack Compose screens.
+- Navigation architecture.
+- Backend technology.
+- Database schema.
+- Existing API endpoints.
+- Authentication provider.
+- User roles.
+- Retailer functionality.
+- Wholesaler functionality.
+- Product listings.
+- Product image storage.
+- Cart and orders.
+- Payment integration.
+- Delivery verification.
+- Inspection workflow.
+- Dispute management.
+- Notifications.
+- AI integration.
+- Existing security controls.
+
+Identify fake data, hardcoded values, broken navigation, missing integrations, security vulnerabilities, and incomplete features.
+
+First provide a concise technical audit and implementation plan. Then proceed with implementation without unnecessarily rewriting working modules.
+
+Do not claim an existing feature works without testing it.
+
+---
+
+# 2. ABSOLUTELY NO FAKE DATA
+
+This is my most important requirement.
+
+The current application displays fabricated or questionable information, including:
+
+- Fake products and prices.
+- Fake product photographs.
+- Fake supplier names.
+- Fake GST numbers.
+- Fake phone numbers.
+- Fake email addresses.
+- Fake order records.
+- Fake cart counts such as 150.
+- Fake notifications.
+- Fake trust scores.
+- Fake verification badges.
+- Fake business statistics.
+- Fake transaction values.
+- Fake delivery information.
+- Fake settlement amounts.
+
+I do not want any fabricated business information.
+
+### Implement real data integration
+
+Every business record must come from the existing backend or a clearly documented calculation based on genuine records.
+
+Fetch:
+
+- Actual registered users.
+- Actual retailer profiles.
+- Actual wholesaler profiles.
+- Actual products.
+- Actual uploaded product images.
+- Actual prices.
+- Actual MOQ.
+- Actual inventory.
+- Actual orders.
+- Actual cart items.
+- Actual payment statuses.
+- Actual delivery statuses.
+- Actual notifications.
+- Actual verification information.
+- Actual support tickets.
+- Actual dispute records.
+
+Never populate production screens using hardcoded sample data.
+
+### Empty states
+
+If information is unavailable, display a clean empty state:
+
+- No products available.
+- No orders yet.
+- Your cart is empty.
+- No notifications.
+- Trust score not available yet.
+- Verification pending.
+- No supplier activity recorded.
+
+Never fill empty screens with fabricated examples.
+
+Do not delete, overwrite, or modify existing genuine user records.
+
+Do not insert demo products, orders, or users into the live database.
+
+---
+
+# 3. CONNECT AND SYNCHRONIZE THE EXISTING BACKEND
+
+Use the existing Tradigoo backend and database.
+
+The website and Android application must remain synchronized.
+
+Examples:
+
+- Products listed on the website must appear in the Android marketplace.
+- Orders placed in Android must appear on the website.
+- Inventory updates must reflect on both platforms.
+- Profile updates must remain synchronized.
+- Disputes raised by users must appear in authorized employee and founder dashboards.
+- Employee ticket updates must be visible to the founder.
+
+Requirements:
+
+- Reuse existing APIs wherever possible.
+- Reuse existing database tables and relationships.
+- Preserve existing user IDs, product IDs, and order IDs.
+- Implement proper API error handling.
+- Implement loading, retry, and empty states.
+- Use pagination where needed.
+- Validate all important data on the backend.
+- Avoid duplicate records.
+- Do not create a separate database.
+
+If backend functionality is missing, identify and implement the required API and database changes safely.
+
+---
+
+# 4. RETAILER APPLICATION
+
+Create a complete retailer experience.
+
+### Bottom navigation
+
+1. Home
+2. Marketplace
+3. Orders
+4. Cart
+5. Profile
+
+### Retailer home
+
+Display:
+
+- Personalized welcome message.
+- Actual marketplace products.
+- Recent orders.
+- Real order statuses.
+- Actual cart count.
+- Relevant suppliers.
+- Genuine notifications.
+- Tradigoo AI Assistant.
+
+### Marketplace
+
+Each product card must display:
+
+- Real uploaded product photograph.
+- Product name.
+- Category.
+- Supplier name.
+- Supplier location.
+- Actual price.
+- Unit.
+- Minimum order quantity.
+- Available quantity, if provided.
+- Product description.
+- Supplier verification status, if genuine.
+- Trust score, if available.
+- Add to Cart button.
+
+Implement:
+
+- Product search.
+- Supplier search.
+- Category filters.
+- Price sorting.
+- Relevant sorting.
+- Product details.
+- Supplier details.
+- Image galleries.
+- MOQ validation.
+- Add to Cart.
+- Update quantity.
+- Remove from Cart.
+- Accurate order calculations.
+
+Never use unrelated stock photographs as actual product images.
+
+If a supplier has not uploaded an image, show a professional placeholder.
+
+### Retailer orders
+
+Display actual:
+
+- Order ID.
+- Product information.
+- Supplier information.
+- Quantity.
+- Total value.
+- Payment status.
+- Dispatch status.
+- Delivery status.
+- Inspection status.
+- Dispute status.
+
+### Retailer profile
+
+Display genuine information:
+
+- Full name.
+- Business name.
+- Registered email.
+- Registered phone.
+- Business location.
+- Actual GST information, if available.
+- Verification status.
+- Relevant trust information.
+- Account settings.
+- Logout.
+
+Never fabricate GSTINs, phone numbers, or addresses.
+
+---
+
+# 5. WHOLESALER APPLICATION
+
+Create a complete wholesaler dashboard.
+
+### Bottom navigation
+
+1. Home
+2. Inventory
+3. Add Product
+4. Orders
+5. Business
+
+### Wholesaler dashboard
+
+Display:
+
+- Actual business details.
+- Real inventory count.
+- Actual active product listings.
+- Incoming orders.
+- Pending dispatches.
+- Completed orders.
+- Real transaction information, if available.
+- Actual settlement status.
+- Genuine trust score, if available.
+- Tradigoo AI Assistant.
+
+### Inventory management
+
+Wholesalers must be able to:
+
+- Add products.
+- Upload actual product photographs.
+- Edit product details.
+- Update prices.
+- Update inventory.
+- Set MOQ.
+- Select categories.
+- Update descriptions.
+- Change product availability.
+- Deactivate listings.
+
+All changes must be saved to the existing backend.
+
+### Order management
+
+Wholesalers must be able to:
+
+- View incoming retailer orders.
+- Review order details.
+- Confirm orders.
+- Update dispatch status.
+- Upload dispatch proof where supported.
+- Add delivery information.
+- Track payment status.
+- Respond to customer issues.
+
+### Business profile
+
+Show only genuine business information and actual verification status.
+
+---
+
+# 6. REMOVE NORMAL USER ROLE SWITCHING
+
+Remove the following options from ordinary user profiles:
+
+- Switch to Wholesaler View.
+- Switch to Retailer / Buyer View.
+
+A retailer must not be able to become a wholesaler just by pressing a button, and vice versa.
+
+User roles must be controlled by the backend and approved registration workflow.
+
+The founder is the only person who may use a secure administrative preview of both experiences.
+
+This preview must not change the founder's actual role or bypass backend permissions.
+
+---
+
+# 7. TRADIGOO AI ASSISTANT
+
+The Tradigoo Assistant is currently missing.
+
+Implement a real AI-powered assistant inside the application.
+
+Make it accessible through a visible floating assistant icon or a dedicated navigation entry.
+
+### Retailer capabilities
+
+- Discover products.
+- Find suppliers.
+- Compare supplier listings.
+- Understand MOQ.
+- Calculate order totals.
+- Understand order statuses.
+- Understand delivery and inspection.
+- Get dispute guidance.
+- Ask questions about Tradigoo.
+
+### Wholesaler capabilities
+
+- Create product descriptions.
+- Improve product listings.
+- Understand inventory.
+- Review incoming orders.
+- Understand dispatch workflows.
+- Review supplier performance.
+- Get platform guidance.
+
+### AI requirements
+
+- Connect to an actual configured AI backend.
+- Keep AI provider credentials server-side.
+- Use authenticated context only where authorized.
+- Never invent prices, product availability, orders, or payment status.
+- Never execute sensitive transactions without explicit confirmation.
+- Add loading, retry, and error handling.
+- Provide an appropriate fallback if the AI service is unavailable.
+
+Do not create a fake chatbot UI and claim AI integration is complete.
+
+---
+
+# 8. REAL SUPPLIER TRUST SCORE
+
+Display the supplier trust score on the supplier profile and appropriate marketplace screens.
+
+Calculate it from genuine backend records, using a transparent documented methodology.
+
+Potential factors:
+
+- Completed orders.
+- Successful deliveries.
+- On-time dispatch.
+- Delivery success rate.
+- Verified disputes.
+- Resolved disputes.
+- Cancellations.
+- Business verification.
+- Genuine buyer feedback, if implemented.
+
+Rules:
+
+- No random scores.
+- No fabricated rankings.
+- No automatic verification badges.
+- No identical scores for every supplier.
+- Show insufficient data when transaction history is inadequate.
+- Keep verification status separate from trust score.
+- Explain how the score is calculated.
+- Recalculate when genuine activity changes.
+
+---
+
+# 9. REMOVE UNRELATED GLOBAL TRADE AND ACMEGRADE CONTENT
+
+Remove irrelevant template references, including:
+
+- Global Trade.
+- Acmegrade.
+- Unrelated company branding.
+- Demo company information.
+- Fabricated supplier records.
+- Old placeholder content.
+
+Use consistent Tradigoo branding throughout.
+
+Do not delete genuine user-generated data merely because a business name is unfamiliar. Verify its source first.
+
+---
+
+# 10. EMPLOYEE OPERATIONS PORTAL
+
+Build a separate Employee Portal for internal Tradigoo operations.
+
+### Employee account
+
+Email: tradigoobackendemployee@gmail.com
+
+Role: EMPLOYEE
+
+Provision this account using the existing authentication provider.
+
+Configure the password securely outside the source code. Never hardcode passwords in Kotlin, GitHub, configuration files, or API responses.
+
+### Employee dashboard
+
+Show genuine:
+
+- New support tickets.
+- Open support tickets.
+- Unassigned tickets.
+- Assigned tickets.
+- High-priority issues.
+- Pending disputes.
+- Order complaints.
+- Delivery complaints.
+- Payment complaints.
+- Verification requests.
+- Resolved issues.
+- Resolution statistics, if available.
+
+### Employee capabilities
+
+Employees should be able to:
+
+1. View support tickets.
+2. Access relevant customer details.
+3. Access related order information when authorized.
+4. Assign tickets to themselves where permitted.
+5. Update ticket status.
+6. Add internal notes.
+7. Respond through an approved communication channel.
+8. Escalate issues.
+9. Track resolution progress.
+10. View ticket history.
+11. Resolve tickets with an explanation.
+12. Close tickets through an authorized workflow.
+
+### Ticket statuses
+
+- New
+- Assigned
+- In Progress
+- Waiting for Customer
+- Escalated
+- Resolved
+- Closed
+
+### Employee restrictions
+
+Employees cannot:
+
+- Access the Founder Dashboard.
+- Change founder permissions.
+- Manage system security settings.
+- Change payment configurations.
+- Access payment secrets.
+- Alter settlements.
+- Delete user accounts.
+- Fabricate trust scores.
+- Access unrelated private customer information.
+
+Log all sensitive employee actions.
+
+---
+
+# 11. FOUNDER ADMINISTRATION DASHBOARD
+
+Create a separate, secure Founder Dashboard.
+
+Only the explicitly authorized founder account may access it.
+
+### Founder account
+
+Email: simarjotkaur514@gmail.com
+
+Role: FOUNDER
+
+Provision the account securely through the existing authentication provider.
+
+Configure the password outside the source code. Do not hardcode credentials or allow public founder registration.
+
+### Founder dashboard overview
+
+Display genuine database information:
+
+- Total retailers.
+- Total wholesalers.
+- Total active products.
+- Total orders.
+- Pending orders.
+- Completed orders.
+- Cancelled orders.
+- Pending disputes.
+- Open support tickets.
+- Pending supplier verification.
+- Actual platform transaction volume.
+- Actual payment status.
+- Actual settlement status.
+- Employee activity.
+- Platform health.
+- API errors.
+
+Never fabricate statistics.
+
+### Founder navigation
+
+1. Overview
+2. Retailers
+3. Wholesalers
+4. Products
+5. Orders
+6. Disputes
+7. Support Tickets
+8. Employees
+9. Verification
+10. Payments
+11. Analytics
+12. Audit Logs
+13. Settings
+
+### Founder permissions
+
+The founder must be able to:
+
+- View all authorized platform information.
+- Inspect retailer accounts.
+- Inspect wholesaler accounts.
+- Review products.
+- Review supplier verification.
+- Monitor orders.
+- Review disputes.
+- View and assign support tickets.
+- Escalate unresolved issues.
+- Manage authorized employees.
+- Monitor employee activity.
+- Review audit logs.
+- Monitor payment and settlement information.
+- Manage platform settings.
+- Review system errors.
+- Inspect retailer and wholesaler experiences.
+
+### Administrative preview
+
+Allow the founder to inspect the retailer, wholesaler, and employee experiences through a secure administrative preview.
+
+Requirements:
+
+- Founder authentication.
+- Visible preview-mode indicator.
+- Preserve founder's actual role.
+- Never bypass backend authorization.
+- Log sensitive actions.
+- Prevent accidental financial transactions unless explicitly authorized.
+
+---
+
+# 12. ALL PREVIOUSLY PLANNED TRADIGOO FEATURES
+
+Preserve and implement the previously planned features, based on existing backend support.
+
+### B2B sourcing marketplace
+- Retailer and wholesaler accounts.
+- Supplier discovery.
+- Product listings.
+- Bulk orders.
+- Categories.
+- MOQ validation.
+- Inventory management.
+
+### Secure payment workflow
+- Payment integration.
+- Payment status.
+- Delayed settlement where supported by the actual payment provider and approved configuration.
+- Accurate transaction history.
+
+Do not claim legally protected escrow if it is not implemented. Do not promise guaranteed payouts.
+
+### Delivery verification
+- OTP delivery confirmation.
+- Dispatch tracking.
+- Delivery proof.
+- Secure status updates.
+
+### 24-hour inspection
+- Inspection start time.
+- Inspection deadline.
+- Inspection status.
+- Issue reporting.
+- Inspection history.
+
+### Dispute management
+- Raise disputes.
+- Upload photos and videos.
+- Describe problems.
+- Track dispute progress.
+- Employee investigation.
+- Founder escalation.
+- Resolution history.
+
+### QR verification
+- Secure QR verification where supported.
+- Backend verification.
+- Prevent forged confirmations.
+- Do not expose private order information publicly.
+
+### AI Trade Brain
+Prepare the architecture for:
+
+- Supplier recommendations.
+- Demand insights.
+- Product recommendations.
+- Anomaly detection.
+
+Do not invent predictions.
+
+### Green Score
+Prepare a sustainability information structure based on genuine supplier-provided evidence.
+
+Never fabricate environmental ratings.
+
+### Notifications
+Implement genuine backend-driven notifications for:
+
+- Orders.
+- Dispatch.
+- Delivery.
+- Inspection.
+- Disputes.
+- Support replies.
+- Verification.
+
+Every notification must correspond to a real event.
+
+---
+
+# 13. FIX GOOGLE LOGIN AND VERCEL REDIRECTS
+
+There is a critical authentication problem.
+
+When I click Sign In or Continue with Google, the application sometimes exits and opens a Vercel URL asking for a Vercel login.
+
+This must be fixed.
+
+Customers must never need a Vercel account to use Tradigoo.
+
+Inspect:
+
+- Existing authentication provider.
+- Google OAuth.
+- Redirect URLs.
+- Callback endpoints.
+- Android deep links.
+- Vercel deployment protection.
+- Backend session management.
+
+Implement proper native Google authentication.
+
+Expected flow:
+
+1. User selects Continue with Google.
+2. Google authentication opens through the correct supported flow.
+3. User authenticates.
+4. OAuth response is securely validated.
+5. User returns to the native Android application.
+6. Existing Tradigoo account is retrieved or a new profile is created.
+7. Selected retailer/wholesaler role is preserved.
+8. Session is securely stored.
+
+Also support:
+
+- Email/password registration.
+- Email/password login.
+- Forgot Password.
+- Logout.
+- Session restoration.
+- Session expiration.
+
+Never fake authentication.
+
+If credentials or provider configuration are missing, provide exact setup instructions.
+
+---
+
+# 14. COMPLETE UI/UX REDESIGN
+
+The current application looks faded, confusing, and unfinished.
+
+Transform it into a modern, attractive, professional B2B marketplace.
+
+### Design direction
+
+- Modern.
+- Clean.
+- Premium.
+- Professional.
+- Trustworthy.
+- Intuitive.
+- Consistent.
+- Easy to navigate.
+
+### Branding
+
+Use the two official Tradigoo assets I provide:
+
+1. Tradigoo App Icon.
+2. Full Tradigoo Logo.
+
+Use the app icon for launcher and compact icon-only placements.
+
+Use the full logo on welcome, login, registration, and suitable branding placements.
+
+Maintain original proportions and colors.
+
+Remove the white rectangular background behind the full logo by using a genuinely transparent asset. Do not distort the logo or remove artwork details.
+
+### UI requirements
+
+- Better contrast and typography.
+- Consistent spacing.
+- Attractive product cards.
+- Real product photographs.
+- Clear buttons.
+- Intuitive navigation.
+- Professional dashboards.
+- Clean forms.
+- Appropriate icons.
+- Smooth and restrained animations.
+- Proper loading and error states.
+- Useful empty states.
+- Responsive layouts.
+- Correct status bar and navigation bar insets.
+- No horizontal overflow.
+- No overlapping buttons.
+- No unnecessary blank spaces.
+- No excessive decorative gradients.
+- No fake badges or counters.
+
+Make the application look like a serious B2B commerce platform.
+
+---
+
+# 15. SECURITY AND ROLE-BASED ACCESS CONTROL
+
+Implement four backend-enforced roles:
+
+- RETAILER
+- WHOLESALER
+- EMPLOYEE
+- FOUNDER
+
+### Permission matrix
+
+| Feature | Retailer | Wholesaler | Employee | Founder |
+|---|---|---|---|---|
+| Browse marketplace | Yes | Yes | Limited | Yes |
+| Place orders | Yes | No unless authorized | No | Preview only |
+| Manage inventory | No | Yes | No | Oversight |
+| View own orders | Yes | Yes | Support context | Yes |
+| Manage support tickets | Own tickets | Own tickets | Authorized tickets | All |
+| Manage employees | No | No | No | Yes |
+| Founder dashboard | No | No | No | Yes |
+| Platform settings | No | No | No | Yes |
+
+Enforce permissions on the backend, not merely by hiding UI elements.
+
+Implement:
+
+- Secure authentication.
+- Access token validation.
+- Refresh token handling.
+- Session revocation.
+- Rate limiting.
+- Input validation.
+- Secure uploads.
+- Audit logs.
+- Proper access restrictions.
+
+---
+
+# 16. COMPLETE TESTING AND QUALITY ASSURANCE
+
+Do not stop after generating code.
+
+Build and test the actual Android application.
+
+### Build verification
+
+- Run the actual Gradle build.
+- Fix compilation errors.
+- Fix Kotlin errors.
+- Fix dependency conflicts.
+- Fix Android manifest issues.
+- Fix resource issues.
+- Fix navigation problems.
+
+### Backend testing
+
+Test:
+
+- Authentication.
+- Role permissions.
+- Product retrieval.
+- Image retrieval.
+- Product creation.
+- Inventory updates.
+- Cart operations.
+- Order creation.
+- Order retrieval.
+- Support tickets.
+- Disputes.
+- Notifications.
+- Trust score calculations.
+- Founder access.
+- Employee access.
+
+### Complete user journeys
+
+**Retailer:**
+
+Register → Login → Browse Marketplace → View Product → Add to Cart → Place Order → Track Order → Confirm Delivery → Inspect Product → Raise Dispute if needed.
+
+**Wholesaler:**
+
+Register → Login → Complete Business Profile → Add Product → Upload Images → Publish Listing → Receive Order → Confirm → Dispatch → Track Settlement.
+
+**Employee:**
+
+Employee Login → Dashboard → View Ticket → Investigate → Add Note → Respond → Escalate → Resolve.
+
+**Founder:**
+
+Founder Login → Founder Dashboard → Review Platform → Inspect Retailer → Inspect Wholesaler → Open Employee Portal → Monitor Tickets → Review Disputes → Review Employees → Review Audit Logs.
+
+### Security testing
+
+Test:
+
+- Unauthenticated order API access.
+- Unauthorized access to other users' orders.
+- Unauthorized inventory changes.
+- Retailer access to wholesaler-only actions.
+- Employee access to founder routes.
+- Founder-only route protection.
+- OTP exposure.
+- Payment secret exposure.
+- Unauthorized settlement actions.
+- Unauthorized role changes.
+
+### UI testing
+
+Test:
+
+- Welcome screen.
+- Login.
+- Google login.
+- Registration.
+- Role selection.
+- Marketplace.
+- Product detail.
+- Cart.
+- Orders.
+- Retailer profile.
+- Wholesaler dashboard.
+- Employee portal.
+- Founder dashboard.
+- Back navigation.
+- Button interactions.
+- Different screen sizes.
+- Scrolling.
+- Loading and empty states.
+
+---
+
+# 17. IMPLEMENTATION ORDER
+
+Work in the following sequence:
+
+**Phase 1:** Complete codebase and backend audit.
+
+**Phase 2:** Architecture, database, and API implementation plan.
+
+**Phase 3:** Security, authentication, and real data integration.
+
+**Phase 4:** Retailer marketplace, product images, cart, and orders.
+
+**Phase 5:** Wholesaler inventory and order management.
+
+**Phase 6:** AI Assistant and genuine supplier trust score.
+
+**Phase 7:** Employee Operations Portal.
+
+**Phase 8:** Founder Dashboard and authorized administrative preview.
+
+**Phase 9:** Google OAuth and Vercel redirect fixes.
+
+**Phase 10:** Complete UI/UX redesign.
+
+**Phase 11:** Build, test, fix, and retest the entire application.
+
+Do not attempt an unsafe one-shot rewrite.
+
+Back up the existing project before major changes. Keep each phase independently testable.
+
+---
+
+# 18. FINAL DELIVERY CHECKLIST
+
+After implementation, report:
+
+1. Files created.
+2. Files modified.
+3. Backend changes.
+4. Database migrations.
+5. API endpoints added or changed.
+6. Authentication configuration.
+7. Founder account provisioning status.
+8. Employee account provisioning status.
+9. AI Assistant integration status.
+10. Real marketplace integration status.
+11. Trust score implementation.
+12. Employee portal implementation.
+13. Founder dashboard implementation.
+14. Actual Gradle build result.
+15. Tests executed.
+16. Security test results.
+17. Remaining bugs.
+18. Missing external credentials.
+19. Instructions for generating the final APK.
+
+### NON-NEGOTIABLE RULES
+
+- Never display fabricated production data.
+- Never invent products, suppliers, users, orders, GST numbers, phone numbers, or statistics.
+- Never create a separate Android database.
+- Never break the existing website.
+- Never modify the website's main branch.
+- Never hardcode passwords.
+- Never expose API keys or payment secrets.
+- Never grant founder privileges to employees.
+- Never allow users to self-assign privileged roles.
+- Never claim a feature works without testing it.
+- Never claim tests passed unless they were actually executed.
+- Never replace genuine existing data with demo data.
+- Never describe unsupported payment protection as escrow.
+
+If a feature needs backend development, external credentials, or provider configuration, identify the exact requirement. Do not create a fake implementation to make the screen look complete.
+
+## FINAL OBJECTIVE
+
+Build Tradigoo into a genuine, secure, scalable B2B sourcing platform.
+
+Retailers must be able to discover and purchase genuine wholesale products.
+
+Wholesalers must be able to publish real inventory and manage genuine orders.
+
+Employees must be able to investigate and resolve real customer issues.
+
+The founder must be able to oversee the entire platform through a secure administrative dashboard.
+
+The Android application must be fully connected to the existing Tradigoo ecosystem, attractive, reliable, secure, and ready for controlled real-user testing.
+
+**Inspect. Plan. Implement. Build. Test. Fix. Verify. Do not just generate screens or write a completion summary.**

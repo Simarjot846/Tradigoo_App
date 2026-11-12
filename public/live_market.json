@@ -1,0 +1,16 @@
+[
+    {
+        "timestamp": "2024-02-12T10:00:00",
+        "commodity": "Wheat",
+        "mandi": "Azadpur",
+        "price": 24.50,
+        "volume": 500
+    },
+    {
+        "timestamp": "2024-02-12T10:00:05",
+        "commodity": "Rice",
+        "mandi": "Ghazipur",
+        "price": 45.00,
+        "volume": 300
+    }
+]

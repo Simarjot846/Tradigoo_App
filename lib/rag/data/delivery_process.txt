@@ -1,0 +1,124 @@
+# Tradigoo Delivery Process
+
+## 1. Overview
+
+Tradigoo works with trusted courier and logistics partners to ensure that wholesale orders are delivered in a structured and traceable manner. The delivery process includes shipment preparation, logistics verification, and OTP-based confirmation to maintain transparency between retailers and wholesalers.
+
+---
+
+## 2. Order Confirmation
+
+Once a retailer places an order and completes payment:
+
+- The payment is securely held in escrow.
+- The wholesaler receives order details.
+- The wholesaler prepares the shipment according to the invoice and platform guidelines.
+
+---
+
+## 3. Shipment Preparation by Wholesaler
+
+Before dispatch, the wholesaler must:
+
+- Generate a detailed invoice.
+- Pack products securely.
+- Ensure correct quantity and quality.
+- Declare package count and approximate weight.
+- Upload shipment details to the platform.
+
+This step ensures accountability before courier pickup.
+
+---
+
+## 4. Courier Pickup and Logistics Verification
+
+After shipment details are submitted:
+
+- A courier partner picks up the package.
+- Basic logistics information such as package count and weight may be verified.
+- Tracking details are generated and shared with the retailer.
+
+The shipment becomes traceable from this stage.
+
+---
+
+## 5. Tracking and In-Transit Updates
+
+Retailers can:
+
+- Track shipment status via tracking ID.
+- View estimated delivery timeline.
+- Receive notifications for dispatch and delivery updates.
+
+Tradigoo provides visibility but actual transit timelines depend on courier partners.
+
+---
+
+## 6. Delivery Confirmation (OTP-Based)
+
+Upon delivery:
+
+- The courier requests OTP verification from the retailer.
+- The retailer confirms receipt using the OTP provided on the platform.
+- OTP confirmation marks successful delivery in the system.
+
+This prevents false delivery confirmations.
+
+---
+
+## 7. Inspection Window After Delivery
+
+After OTP confirmation:
+
+- The retailer is given a defined inspection window.
+- The retailer must verify:
+  - Product quality
+  - Product quantity
+  - Match with invoice details
+
+If any issue is found, a dispute must be raised within the inspection period.
+
+---
+
+## 8. Failed Delivery Scenarios
+
+Delivery may fail due to:
+
+- Incorrect address
+- Retailer unavailable
+- Repeated OTP verification failure
+- Courier inability to reach destination
+
+In such cases:
+- The shipment may be rescheduled or returned.
+- Escrow funds remain on hold until resolution.
+
+---
+
+## 9. Delivery Responsibilities
+
+Wholesaler Responsibilities:
+- Correct product dispatch
+- Secure packaging
+- Accurate shipment declaration
+
+Retailer Responsibilities:
+- Provide correct delivery address
+- Be available during delivery
+- Verify products during inspection window
+
+Courier Responsibilities:
+- Safe transportation
+- Accurate delivery status updates
+
+---
+
+## 10. Limitations
+
+Tradigoo:
+
+- Does not directly control courier transit delays.
+- Does not guarantee exact delivery timelines.
+- Relies on courier partners for physical shipment handling.
+
+However, Tradigoo ensures that all deliveries are digitally tracked and linked to escrow protection.

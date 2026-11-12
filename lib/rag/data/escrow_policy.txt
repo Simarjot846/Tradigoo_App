@@ -1,0 +1,77 @@
+# Tradigoo Escrow Payment Policy
+
+## 1. What is Escrow?
+
+Tradigoo uses an escrow-based payment system to protect both retailers and wholesalers during bulk transactions. When a retailer places an order, payment is securely held on the Tradigoo platform instead of being immediately transferred to the wholesaler.
+
+This ensures that funds are protected until delivery is successfully completed.
+
+---
+
+## 2. How the Escrow Process Works
+
+Step 1: The retailer places an order and completes payment through the platform.
+
+Step 2: The payment is securely held in escrow.
+
+Step 3: The wholesaler prepares and ships the goods.
+
+Step 4: The retailer receives the goods and verifies delivery using OTP-based confirmation.
+
+Step 5: The retailer is given an inspection window to check product quality and quantity.
+
+Step 6: If no dispute is raised within the inspection period, the funds are released to the wholesaler.
+
+---
+
+## 3. Inspection Window
+
+After delivery confirmation, retailers are provided with a defined inspection window to:
+
+- Verify product quality
+- Check quantity
+- Confirm items match invoice details
+
+If issues are found, a dispute must be raised within the inspection period.
+
+---
+
+## 4. Dispute Handling in Escrow
+
+If a dispute is raised:
+
+- Funds remain on hold.
+- Both parties may be asked to provide evidence such as photos, videos, invoices, or delivery proof.
+- Tradigoo reviews submitted information.
+- A resolution is provided based on platform policies.
+
+Funds are only released after resolution.
+
+---
+
+## 5. When Are Funds Released?
+
+Funds are released to the wholesaler when:
+
+- Delivery is confirmed, and
+- The inspection window closes without dispute, or
+- A dispute is resolved in favor of the wholesaler.
+
+---
+
+## 6. What Escrow Does Not Cover
+
+Tradigoo’s escrow system:
+
+- Does not guarantee profit or resale success.
+- Does not cover disputes raised after the inspection window closes.
+- Does not replace legal agreements between trading parties.
+
+---
+
+## 7. Benefits of Escrow on Tradigoo
+
+- Reduces payment fraud
+- Builds trust between new trading partners
+- Ensures structured dispute resolution
+- Improves transparency in wholesale transactions

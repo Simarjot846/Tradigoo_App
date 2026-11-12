@@ -1,0 +1,112 @@
+# Tradigoo Dispute Resolution Policy
+
+## 1. Overview
+
+Tradigoo follows a structured and evidence-based dispute resolution process to ensure fairness between retailers and wholesalers. Disputes must be raised within the defined inspection window after delivery confirmation.
+
+The platform uses an AI-assisted verification system as the first layer of resolution.
+
+---
+
+## 2. When Can a Dispute Be Raised?
+
+A retailer may raise a dispute if:
+
+- The delivered quantity does not match the invoice.
+- The product is damaged.
+- The product does not match the ordered specification.
+- The shipment contains incorrect items.
+
+Disputes must be initiated within the inspection window.
+
+---
+
+## 3. Live Video Recording Requirement
+
+To maintain authenticity and prevent fraudulent claims:
+
+- Retailers are required to record a LIVE unboxing video through the Tradigoo platform.
+- Pre-recorded or uploaded videos are not accepted.
+- The recording must clearly show:
+  - Package condition before opening
+  - Shipping label
+  - Unboxing process
+  - Product condition
+  - Quantity verification
+
+This ensures that evidence is captured in real-time without manipulation.
+
+---
+
+## 4. AI-Based Initial Review
+
+Once the live video is submitted:
+
+- Tradigoo’s AI system analyzes the recording.
+- The AI checks for:
+  - Visible damage
+  - Quantity mismatch
+  - Product inconsistency
+  - Tampering signs
+
+Based on analysis, the system generates a preliminary resolution recommendation.
+
+---
+
+## 5. AI Resolution Outcomes
+
+The AI may:
+
+- Approve full refund
+- Approve partial refund
+- Recommend replacement
+- Reject dispute due to insufficient evidence
+
+If both parties accept the AI decision, escrow funds are processed accordingly.
+
+---
+
+## 6. Manual Verification Escalation
+
+If either party is not satisfied with the AI decision:
+
+- The dispute is escalated to manual review.
+- Tradigoo’s verification team reviews:
+  - Live video recording
+  - Shipment details
+  - Invoice data
+  - Courier confirmation logs
+
+A final decision is made after manual assessment.
+
+---
+
+## 7. Escrow Handling During Dispute
+
+While a dispute is active:
+
+- Funds remain locked in escrow.
+- No payment is released to the wholesaler.
+- Refunds or adjustments are processed only after resolution.
+
+---
+
+## 8. Fraud Prevention Measures
+
+To prevent misuse of the system:
+
+- Only platform-recorded live videos are accepted.
+- Edited or externally uploaded media is not considered valid evidence.
+- Repeated false claims may lead to account restrictions.
+
+---
+
+## 9. Resolution Finality
+
+Once a dispute is resolved:
+
+- Escrow funds are released accordingly.
+- The decision is recorded in transaction history.
+- Both parties are notified.
+
+The dispute is considered closed after final resolution.

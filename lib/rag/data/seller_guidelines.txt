@@ -1,0 +1,121 @@
+# Tradigoo Seller Guidelines
+
+## 1. Overview
+
+Tradigoo requires all wholesalers to follow standardized guidelines to ensure transparency, quality control, and trust in wholesale transactions. These guidelines help reduce disputes and improve successful order completion rates.
+
+---
+
+## 2. Seller Verification
+
+All wholesalers must:
+
+- Complete identity verification.
+- Provide valid business registration details.
+- Submit required compliance documentation.
+- Maintain accurate business information on the platform.
+
+Verification helps build trust with retailers.
+
+---
+
+## 3. Product Listing Standards
+
+When listing products, sellers must:
+
+- Provide accurate product descriptions.
+- Clearly mention specifications (size, material, model, etc.).
+- Upload clear and genuine product images.
+- Declare minimum order quantity (MOQ).
+- Mention estimated dispatch timelines.
+
+Misleading listings are not permitted.
+
+---
+
+## 4. Pricing Transparency
+
+Sellers must:
+
+- Provide transparent bulk pricing.
+- Clearly mention any additional charges (shipping, packaging, taxes).
+- Avoid hidden fees after order confirmation.
+
+All pricing must be clearly visible before order placement.
+
+---
+
+## 5. Order Fulfillment Responsibilities
+
+After receiving an order:
+
+- Prepare products according to invoice.
+- Ensure correct quantity and quality.
+- Securely package items to prevent damage.
+- Upload shipment details before dispatch.
+
+Failure to dispatch within the committed timeline may affect seller ratings.
+
+---
+
+## 6. Packaging Standards
+
+Sellers must:
+
+- Use secure and damage-resistant packaging.
+- Seal packages properly.
+- Ensure labels are accurate and readable.
+- Avoid mixing incorrect products in bulk shipments.
+
+Proper packaging reduces delivery disputes.
+
+---
+
+## 7. Cooperation During Disputes
+
+If a dispute is raised:
+
+- Sellers must respond within the defined time frame.
+- Provide supporting documents such as invoice copy and shipment proof.
+- Cooperate with AI and manual verification processes.
+
+Non-cooperation may result in delayed payment release.
+
+---
+
+## 8. Performance and Ratings
+
+Seller performance may be evaluated based on:
+
+- On-time dispatch rate
+- Dispute frequency
+- Resolution quality
+- Retailer feedback
+
+Consistent policy violations may impact platform visibility.
+
+---
+
+## 9. Prohibited Activities
+
+The following activities are not allowed:
+
+- Supplying counterfeit goods
+- Providing false product information
+- Manipulating invoices
+- Attempting to bypass escrow payments
+- Encouraging off-platform transactions
+
+Violation of these rules may lead to account suspension.
+
+---
+
+## 10. Payment Release Conditions
+
+Sellers receive payment when:
+
+- Delivery is confirmed through OTP.
+- The inspection window closes without dispute.
+- Or a dispute is resolved in the seller’s favor.
+
+Escrow funds are not released before these conditions are met.
