@@ -131,9 +131,9 @@ class CartRepository(private val context: Context) {
 
     fun getSubtotal(): Double = TaxCalculator.calculateCartTotals(_cartItems.value).subtotal
 
-    fun getGst(): Double = TaxCalculator.calculateCartTotals(_cartItems.value).gstAmount
+    fun getGst(): Double = TaxCalculator.calculateCartTotals(_cartItems.value).gstTotal
 
-    fun getTotal(): Double = TaxCalculator.calculateCartTotals(_cartItems.value).totalAmount
+    fun getTotal(): Double = TaxCalculator.calculateCartTotals(_cartItems.value).grandTotal
 
     private fun extractErrorMessage(rawBody: String?): String? {
         if (rawBody.isNullOrBlank()) return null

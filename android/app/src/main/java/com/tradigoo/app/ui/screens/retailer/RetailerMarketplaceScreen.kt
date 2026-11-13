@@ -207,7 +207,7 @@ fun RetailerMarketplaceScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(products, key = { it.id }) { product ->
-                    val gstSlab = TaxCalculator.getGstRatePercent(product.category)
+                    val gstSlab = TaxCalculator.getGstRateForCategory(product.category)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -465,10 +465,10 @@ fun RetailerMarketplaceScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Subtotal", fontSize = 12.sp, color = TradigooTextSecondary)
-                                Text(formatInr(pricing.subtotal), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                Text(formatInr(pricing.taxableAmount), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("GST (${pricing.gstRatePercent}%)", fontSize = 12.sp, color = TradigooTextSecondary)
+                                Text("GST (${pricing.gstRate}%)", fontSize = 12.sp, color = TradigooTextSecondary)
                                 Text(formatInr(pricing.gstAmount), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             }
                             HorizontalDivider(color = TradigooCardBorder, modifier = Modifier.padding(vertical = 4.dp))

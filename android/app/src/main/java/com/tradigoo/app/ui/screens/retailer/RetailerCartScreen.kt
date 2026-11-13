@@ -232,7 +232,7 @@ fun RetailerCartScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = "GST (Category Slabs)", fontSize = 13.sp, color = TradigooTextSecondary)
-                        Text(text = formatInr(totals.gstAmount), fontSize = 13.sp, color = TradigooTextPrimary, fontWeight = FontWeight.Medium)
+                        Text(text = formatInr(totals.gstTotal), fontSize = 13.sp, color = TradigooTextPrimary, fontWeight = FontWeight.Medium)
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -255,7 +255,7 @@ fun RetailerCartScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = "Total Payable (Escrow)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TradigooTextPrimary)
-                        Text(text = formatInr(totals.totalAmount), fontSize = 20.sp, fontWeight = FontWeight.Black, color = TradigooNavy)
+                        Text(text = formatInr(totals.grandTotal), fontSize = 20.sp, fontWeight = FontWeight.Black, color = TradigooNavy)
                     }
                 }
             }
@@ -289,7 +289,7 @@ fun RetailerCartScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             TradigooGradientButton(
-                text = "Place Escrow Order (${formatInr(totals.totalAmount)})",
+                text = "Place Escrow Order (${formatInr(totals.grandTotal)})",
                 isLoading = isActionLoading,
                 onClick = onCheckout
             )
