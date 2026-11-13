@@ -91,6 +91,13 @@ export async function POST(request: Request) {
     }
 
     // 5. Create user profile using Service Role (bypasses RLS)
+    const rawGstin = typeof userData?.gstin === 'string'
+      ? userData.gstin
+      : typeof userData?.gst_number === 'string'
+        ? userData.gst_number
+        : null;
+    const cleanGstin = rawGstin ? rawGstin.trim().toUpperCase() || null : null;
+
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
@@ -101,6 +108,7 @@ export async function POST(request: Request) {
         phone: userData?.phone || null,
         business_name: userData?.business_name || '',
         location: userData?.location || 'India',
+        gst_number: cleanGstin,
         trust_score: 500,
         total_orders: 0,
         successful_orders: 0,
@@ -124,7 +132,26 @@ export async function POST(request: Request) {
 
     // 6. Build response with cookie actions
     const response = NextResponse.json({
-      user: authData.user,
+      user: {
+        ...authData.user,
+        role: userData?.role || 'retailer',
+        user_metadata: {
+          ...(authData.user.user_metadata || {}),
+          name: userData?.name || cleanEmail.split('@')[0],
+          role: userData?.role || 'retailer',
+          business_name: userData?.business_name || '',
+          phone: userData?.phone || null,
+          location: userData?.location || 'India',
+          gst_number: cleanGstin,
+          gst_verified: false,
+          trust_score: 500,
+          total_orders: 0,
+          successful_orders: 0,
+          disputed_orders: 0,
+        },
+      },
+      token: authData.session?.access_token || null,
+      session: authData.session || null,
       message: 'Account created successfully'
     });
 

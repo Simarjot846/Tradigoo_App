@@ -54,7 +54,7 @@ fun RoleSelectionScreen(
                 ) {
                     TradigooGradientButton(
                         text = if (selectedRole == UserRole.RETAILER) "Register as Retailer →" else "Register as Wholesaler →",
-                        gradient = if (selectedRole == UserRole.RETAILER) TradigooBlueGradient else TradigooEmeraldGradient,
+                        gradient = if (selectedRole == UserRole.RETAILER) TradigooBrandGradient else TradigooEmeraldGradient,
                         onClick = {
                             sessionManager.saveSelectedRole(selectedRole)
                             onRoleSelected(selectedRole)

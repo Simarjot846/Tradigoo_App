@@ -70,7 +70,7 @@ fun TradigooTextField(
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = TradigooSurface,
                 unfocusedContainerColor = TradigooSurface,
-                focusedBorderColor = TradigooBlue,
+                focusedBorderColor = TradigooNavy,
                 unfocusedBorderColor = TradigooCardBorder,
                 errorBorderColor = StatusError,
                 focusedTextColor = TradigooTextPrimary,

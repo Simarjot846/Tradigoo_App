@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#2563EB</color>
-    <color name="colorPrimaryDark">#1D4ED8</color>
-    <color name="colorAccent">#7C3AED</color>
-    <color name="tradigoo_blue">#2563EB</color>
-    <color name="tradigoo_violet">#7C3AED</color>
-    <color name="tradigoo_emerald">#10B981</color>
+    <color name="colorPrimary">#0F172A</color>
+    <color name="colorPrimaryDark">#090E1A</color>
+    <color name="colorAccent">#C9A227</color>
     <color name="tradigoo_navy">#0F172A</color>
+    <color name="tradigoo_navy_surface">#1E293B</color>
+    <color name="tradigoo_gold">#C9A227</color>
+    <color name="tradigoo_blue">#1E3A8A</color>
+    <color name="tradigoo_emerald">#10B981</color>
     <color name="tradigoo_bg">#F8FAFC</color>
 </resources>

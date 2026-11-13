@@ -1,6 +1,6 @@
 package com.tradigoo.app.ui.screens.wholesaler
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,14 +29,24 @@ fun WholesalerMainScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableStateOf<WholesalerTab>(WholesalerTab.Home) }
     var showAiAssistant by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.error, uiState.actionMessage) {
+        val message = uiState.error ?: uiState.actionMessage
+        if (!message.isNullOrBlank()) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearFeedback()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             Column {
                 if (isPreview) {
                     Surface(
-                        color = TradigooEmeraldBg,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooEmerald.copy(alpha = 0.4f)),
+                        color = TradigooGoldBg,
+                        border = BorderStroke(1.dp, TradigooGold.copy(alpha = 0.45f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -49,14 +58,19 @@ fun WholesalerMainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "👀 ADMINISTRATIVE PREVIEW MODE (FOUNDER)",
+                                text = "ADMIN PREVIEW MODE (FOUNDER)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TradigooEmeraldDark
+                                color = TradigooNavy
                             )
                             if (onExitPreview != null) {
                                 TextButton(onClick = onExitPreview) {
-                                    Text("Exit Preview", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TradigooEmeraldDark)
+                                    Text(
+                                        text = "Exit Preview",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TradigooNavy
+                                    )
                                 }
                             }
                         }
@@ -73,12 +87,12 @@ fun WholesalerMainScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAiAssistant = true },
-                containerColor = TradigooEmeraldDark,
-                contentColor = Color.White,
+                containerColor = TradigooNavy,
+                contentColor = TradigooGoldLight,
                 shape = CircleShape,
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = "Tradigoo AI Assistant")
+                Icon(Icons.Default.AutoAwesome, contentDescription = "Tradigoo Trade Assistant")
             }
         },
         bottomBar = {
@@ -86,28 +100,28 @@ fun WholesalerMainScreen(
                 containerColor = TradigooSurface,
                 tonalElevation = 8.dp
             ) {
+                val navColors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = TradigooNavy,
+                    selectedTextColor = TradigooNavy,
+                    indicatorColor = TradigooGoldBg,
+                    unselectedIconColor = TradigooTextTertiary,
+                    unselectedTextColor = TradigooTextTertiary
+                )
+
                 NavigationBarItem(
                     selected = selectedTab == WholesalerTab.Home,
                     onClick = { selectedTab = WholesalerTab.Home },
                     icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
                     label = { Text("Home", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooEmerald,
-                        selectedTextColor = TradigooEmerald,
-                        indicatorColor = TradigooEmeraldBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
                     selected = selectedTab == WholesalerTab.Inventory,
                     onClick = { selectedTab = WholesalerTab.Inventory },
-                    icon = { Icon(Icons.Default.Inventory, contentDescription = "Inventory") },
+                    icon = { Icon(Icons.Default.Inventory2, contentDescription = "Inventory") },
                     label = { Text("Inventory", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooEmerald,
-                        selectedTextColor = TradigooEmerald,
-                        indicatorColor = TradigooEmeraldBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
@@ -115,11 +129,7 @@ fun WholesalerMainScreen(
                     onClick = { selectedTab = WholesalerTab.AddProduct },
                     icon = { Icon(Icons.Default.AddCircle, contentDescription = "Add Product") },
                     label = { Text("Add SKU", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooEmerald,
-                        selectedTextColor = TradigooEmerald,
-                        indicatorColor = TradigooEmeraldBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
@@ -127,11 +137,7 @@ fun WholesalerMainScreen(
                     onClick = { selectedTab = WholesalerTab.Orders },
                     icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Orders") },
                     label = { Text("Orders", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooEmerald,
-                        selectedTextColor = TradigooEmerald,
-                        indicatorColor = TradigooEmeraldBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
@@ -139,11 +145,7 @@ fun WholesalerMainScreen(
                     onClick = { selectedTab = WholesalerTab.Profile },
                     icon = { Icon(Icons.Default.Business, contentDescription = "Business") },
                     label = { Text("Business", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooEmerald,
-                        selectedTextColor = TradigooEmerald,
-                        indicatorColor = TradigooEmeraldBg
-                    )
+                    colors = navColors
                 )
             }
         },
@@ -158,8 +160,11 @@ fun WholesalerMainScreen(
                 WholesalerTab.Home -> {
                     WholesalerHomeScreen(
                         user = uiState.user,
+                        trustScore = uiState.trustScore,
                         inventory = uiState.inventory,
                         orders = uiState.receivedOrders,
+                        isLoading = uiState.isLoading,
+                        onRefresh = { viewModel.loadData() },
                         onNavigateToAddProduct = { selectedTab = WholesalerTab.AddProduct },
                         onNavigateToOrders = { selectedTab = WholesalerTab.Orders }
                     )
@@ -167,14 +172,20 @@ fun WholesalerMainScreen(
                 WholesalerTab.Inventory -> {
                     WholesalerInventoryScreen(
                         inventory = uiState.inventory,
+                        isActionLoading = uiState.isActionLoading,
                         onNavigateToAddProduct = { selectedTab = WholesalerTab.AddProduct },
+                        onUpdateProduct = { id, name, cat, price, unit, moq, desc, active, onDone ->
+                            viewModel.updateProduct(id, name, cat, price, unit, moq, desc, active, onDone)
+                        },
                         onDeleteProduct = { viewModel.deleteProduct(it) }
                     )
                 }
                 WholesalerTab.AddProduct -> {
                     WholesalerAddProductScreen(
-                        onProductPublished = { name, cat, price, unit, moq, desc ->
-                            viewModel.addProduct(name, cat, price, unit, moq, desc) {
+                        isSubmitting = uiState.isActionLoading,
+                        onProductPublished = { name, cat, price, unit, moq, desc, imageUri, batch, onSuccess ->
+                            viewModel.addProduct(name, cat, price, unit, moq, desc, imageUri, batch) {
+                                onSuccess()
                                 selectedTab = WholesalerTab.Inventory
                             }
                         }
@@ -183,13 +194,23 @@ fun WholesalerMainScreen(
                 WholesalerTab.Orders -> {
                     WholesalerOrdersScreen(
                         orders = uiState.receivedOrders,
+                        isActionLoading = uiState.isActionLoading,
+                        onRefresh = { viewModel.loadData() },
                         onUpdateStatus = { id, status -> viewModel.updateOrderStatus(id, status) }
                     )
                 }
                 WholesalerTab.Profile -> {
                     WholesalerProfileScreen(
                         user = uiState.user,
-                        onLogout = onLogout
+                        trustScore = uiState.trustScore,
+                        isSavingProfile = uiState.isActionLoading,
+                        onUpdateProfile = { name, phone, business, location, gst, address, pin, onSaved ->
+                            viewModel.updateProfile(name, phone, business, location, gst, address, pin, onSaved)
+                        },
+                        onLogout = {
+                            viewModel.logout()
+                            onLogout()
+                        }
                     )
                 }
             }

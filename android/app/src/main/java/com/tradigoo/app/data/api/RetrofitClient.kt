@@ -1,8 +1,10 @@
 package com.tradigoo.app.data.api
 
 import android.content.Context
+import com.tradigoo.app.BuildConfig
 import com.tradigoo.app.data.local.SessionManager
 import okhttp3.Interceptor
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -11,23 +13,16 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // Default production endpoint as deployed for Tradigoo
-    const val DEFAULT_BASE_URL = "https://tradigoo.vercel.app/"
+    val DEFAULT_BASE_URL: String = BuildConfig.API_BASE_URL
 
     private var retrofit: Retrofit? = null
     private var currentBaseUrl = DEFAULT_BASE_URL
     private var applicationContext: Context? = null
 
-    /**
-     * Initializes the client with application context for token injection
-     */
     fun init(context: Context) {
         applicationContext = context.applicationContext
     }
 
-    /**
-     * Default direct access property for TradigooApiService
-     */
     val apiService: TradigooApiService
         get() = getApiService(applicationContext)
 
@@ -36,25 +31,35 @@ object RetrofitClient {
             applicationContext = context.applicationContext
         }
 
-        if (retrofit == null || currentBaseUrl != baseUrl) {
-            currentBaseUrl = baseUrl
+        val normalizedBaseUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+
+        if (retrofit == null || currentBaseUrl != normalizedBaseUrl) {
+            currentBaseUrl = normalizedBaseUrl
 
             val logging = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
+                level = if (BuildConfig.DEBUG) {
+                    HttpLoggingInterceptor.Level.BASIC
+                } else {
+                    HttpLoggingInterceptor.Level.NONE
+                }
             }
 
             val authInterceptor = Interceptor { chain ->
                 val original = chain.request()
                 val builder = original.newBuilder()
                     .header("Accept", "application/json")
-                    .header("Content-Type", "application/json")
+
+                // Preserve multipart boundary headers on file uploads
+                if (original.body !is MultipartBody && original.header("Content-Type") == null) {
+                    builder.header("Content-Type", "application/json")
+                }
 
                 val ctx = applicationContext ?: context
                 if (ctx != null) {
                     try {
                         val sessionManager = SessionManager.getInstance(ctx)
                         val token = sessionManager.getAuthToken()
-                        if (!token.isNullOrEmpty()) {
+                        if (!token.isNullOrBlank()) {
                             builder.header("Authorization", "Bearer $token")
                         }
                     } catch (_: Exception) {
@@ -68,13 +73,13 @@ object RetrofitClient {
             val okHttpClient = OkHttpClient.Builder()
                 .addInterceptor(authInterceptor)
                 .addInterceptor(logging)
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(25, TimeUnit.SECONDS)
+                .writeTimeout(25, TimeUnit.SECONDS)
                 .build()
 
             retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl)
+                .baseUrl(normalizedBaseUrl)
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()

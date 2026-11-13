@@ -9,7 +9,6 @@ import com.tradigoo.app.domain.model.UserRole
 class SessionManager(context: Context) {
 
     private val prefs: SharedPreferences = try {
-        // Attempt EncryptedSharedPreferences for enterprise security
         val masterKeyAlias = androidx.security.crypto.MasterKeys.getOrCreate(
             androidx.security.crypto.MasterKeys.AES256_GCM_SPEC
         )
@@ -20,19 +19,28 @@ class SessionManager(context: Context) {
             androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
-    } catch (e: Exception) {
-        // Graceful fallback to private mode preferences
+    } catch (_: Exception) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     private val gson = Gson()
 
     fun saveAuthToken(token: String) {
-        prefs.edit().putString(KEY_AUTH_TOKEN, token).apply()
+        if (token.isNotBlank()) {
+            prefs.edit().putString(KEY_AUTH_TOKEN, token).apply()
+        }
     }
 
     fun getAuthToken(): String? {
-        return prefs.getString(KEY_AUTH_TOKEN, null)
+        return prefs.getString(KEY_AUTH_TOKEN, null)?.takeIf { it.isNotBlank() }
+    }
+
+    fun clearAuthToken() {
+        prefs.edit().remove(KEY_AUTH_TOKEN).apply()
+    }
+
+    fun hasValidToken(): Boolean {
+        return !getAuthToken().isNullOrBlank()
     }
 
     fun saveUser(user: User) {
@@ -47,7 +55,7 @@ class SessionManager(context: Context) {
         val userJson = prefs.getString(KEY_USER, null) ?: return null
         return try {
             gson.fromJson(userJson, User::class.java)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -67,7 +75,7 @@ class SessionManager(context: Context) {
     }
 
     fun isLoggedIn(): Boolean {
-        return getUser() != null || getAuthToken() != null
+        return getUser() != null && hasValidToken()
     }
 
     fun saveFcmToken(token: String) {
@@ -88,7 +96,11 @@ class SessionManager(context: Context) {
     }
 
     fun clearSession() {
+        val fcmToken = getFcmToken()
         prefs.edit().clear().apply()
+        if (!fcmToken.isNullOrBlank()) {
+            prefs.edit().putString(KEY_FCM_TOKEN, fcmToken).apply()
+        }
     }
 
     companion object {

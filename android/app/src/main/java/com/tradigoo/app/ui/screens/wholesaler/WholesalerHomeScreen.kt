@@ -1,43 +1,58 @@
 package com.tradigoo.app.ui.screens.wholesaler
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tradigoo.app.data.api.ApiTrustScoreResponse
 import com.tradigoo.app.domain.model.Order
 import com.tradigoo.app.domain.model.Product
 import com.tradigoo.app.domain.model.User
 import com.tradigoo.app.ui.components.GreenScoreMeter
 import com.tradigoo.app.ui.components.StatusBadge
+import com.tradigoo.app.ui.components.formatInr
+import com.tradigoo.app.ui.components.formatIsoDate
 import com.tradigoo.app.ui.theme.*
 
 @Composable
 fun WholesalerHomeScreen(
     user: User?,
+    trustScore: ApiTrustScoreResponse?,
     inventory: List<Product>,
     orders: List<Order>,
+    isLoading: Boolean = false,
+    onRefresh: () -> Unit = {},
     onNavigateToAddProduct: () -> Unit,
     onNavigateToOrders: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
-    val totalRevenue = orders.sumOf { it.totalAmount }
-    val pendingShipments = orders.count { it.status == "ORDER_CREATED" || it.status.contains("ESCROW") }
+    val totalRevenue = orders
+        .filter { it.normalizedStatus() !in setOf("cancelled", "refunded") }
+        .sumOf { it.totalAmount }
+    val pendingShipments = orders.count {
+        val status = it.normalizedStatus()
+        status == "payment_in_escrow" || status == "payment_pending"
+    }
+    val activeSkuCount = inventory.count { it.isActive }
 
     Column(
         modifier = Modifier
@@ -46,7 +61,7 @@ fun WholesalerHomeScreen(
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
-        // Wholesaler Banner Card (Emerald Theme)
+        // Supplier Hub Banner Card (Deep Navy & Gold Identity)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -56,11 +71,7 @@ fun WholesalerHomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(Color(0xFF065F46), Color(0xFF10B981))
-                        )
-                    )
+                    .background(TradigooBrandGradient)
                     .padding(20.dp)
             ) {
                 Column {
@@ -71,31 +82,58 @@ fun WholesalerHomeScreen(
                     ) {
                         Text(
                             text = "SUPPLIER HUB",
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = TradigooGoldLight,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White.copy(alpha = 0.25f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "Verified Seller Mill",
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.White.copy(alpha = 0.14f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (user?.gstVerified == true) {
+                                        Icon(
+                                            imageVector = Icons.Default.Verified,
+                                            contentDescription = null,
+                                            tint = TradigooEmeraldLight,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                    }
+                                    Text(
+                                        text = if (user?.gstVerified == true) "GST Verified" else "Supplier Account",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = onRefresh,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Refresh dashboard",
+                                    tint = Color.White.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = user?.businessName ?: "Bharat Agro Processing Ltd",
+                        text = user?.businessName?.takeIf { it.isNotBlank() }
+                            ?: user?.name?.takeIf { it.isNotBlank() }
+                            ?: "Wholesale Partner",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -103,48 +141,79 @@ fun WholesalerHomeScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Text(
-                        text = "📍 ${user?.location ?: "MIDC Industrial Estate, Nagpur"}",
-                        fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = TradigooGoldLight,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = user?.location?.takeIf { it.isNotBlank() } ?: "India",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.85f)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Metrics Bar
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.Black.copy(alpha = 0.25f))
+                            .background(Color.White.copy(alpha = 0.08f))
                             .padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text(text = "Total Volume", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-                            Text(text = "₹${(totalRevenue / 1000).toInt()}k", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(text = "Order Volume", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                            Text(
+                                text = formatInr(totalRevenue),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         }
                         Column {
-                            Text(text = "Pending Dispatch", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-                            Text(text = "$pendingShipments Orders", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TradigooAmber)
+                            Text(text = "To Dispatch", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                            Text(
+                                text = "$pendingShipments Orders",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TradigooGoldLight
+                            )
                         }
                         Column {
                             Text(text = "Active SKUs", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-                            Text(text = "${inventory.size} Products", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                text = "$activeSkuCount / ${inventory.size}",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         }
                     }
                 }
             }
         }
 
+        if (isLoading) {
+            Spacer(modifier = Modifier.height(10.dp))
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = TradigooGold,
+                trackColor = TradigooCardBorder
+            )
+        }
+
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Wholesaler Settlement Terms Card (As shown in user screenshots: 1.5% settlement fee, guaranteed payouts)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooEmerald.copy(alpha = 0.3f))
+            border = BorderStroke(1.dp, TradigooCardBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -153,7 +222,7 @@ fun WholesalerHomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "1.5% Settlement Fee Terms",
+                        text = "Escrow Settlement Terms",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TradigooTextPrimary
@@ -166,7 +235,7 @@ fun WholesalerHomeScreen(
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = "Zero Default Risk",
+                            text = "1.5% Platform Fee",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = TradigooEmeraldDark
@@ -177,7 +246,7 @@ fun WholesalerHomeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Expand your retail reach across India with guaranteed payouts upon verified delivery via Tradigoo Escrow.",
+                    text = "Buyer funds are held securely in Tradigoo Escrow upon checkout and released after delivery OTP & 24-hour inspection clearance.",
                     fontSize = 13.sp,
                     color = TradigooTextSecondary,
                     lineHeight = 18.sp
@@ -193,7 +262,7 @@ fun WholesalerHomeScreen(
                         onClick = onNavigateToAddProduct,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = TradigooEmerald)
+                        colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
@@ -203,9 +272,10 @@ fun WholesalerHomeScreen(
                     OutlinedButton(
                         onClick = onNavigateToOrders,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, TradigooNavy.copy(alpha = 0.25f))
                     ) {
-                        Text("View Orders (${orders.size})", fontSize = 12.sp)
+                        Text("View Orders (${orders.size})", fontSize = 12.sp, color = TradigooNavy)
                     }
                 }
             }
@@ -213,17 +283,19 @@ fun WholesalerHomeScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Wholesaler Trust & Reliability Score
+        val hasTrustData = trustScore?.hasEnoughData ?: ((user?.totalOrders ?: 0) >= 3)
         GreenScoreMeter(
-            score = user?.trustScore ?: 780,
-            label = "Wholesaler Supply Credibility & Reliability"
+            score = trustScore?.score ?: if (hasTrustData) user?.trustScore else null,
+            hasEnoughData = hasTrustData,
+            badgeText = trustScore?.label,
+            subtitleText = trustScore?.explanation,
+            label = "Wholesaler Supply Credibility"
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Recent Inbound Orders Section
         Text(
-            text = "Recent Retail Inbound Orders",
+            text = "Recent Inbound Orders",
             fontSize = 17.sp,
             fontWeight = FontWeight.Bold,
             color = TradigooTextPrimary
@@ -236,7 +308,7 @@ fun WholesalerHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+                border = BorderStroke(1.dp, TradigooCardBorder)
             ) {
                 Column(
                     modifier = Modifier
@@ -244,7 +316,12 @@ fun WholesalerHomeScreen(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "📬", fontSize = 32.sp)
+                    Icon(
+                        imageVector = Icons.Default.Inbox,
+                        contentDescription = null,
+                        tint = TradigooNavy.copy(alpha = 0.55f),
+                        modifier = Modifier.size(36.dp)
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "No Inbound Orders Yet",
@@ -254,69 +331,67 @@ fun WholesalerHomeScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "When retailers purchase your products, consignment details and delivery OTP codes will appear here.",
+                        text = "When retailers book your catalog listings, escrow orders and dispatch details will appear here.",
                         fontSize = 12.sp,
                         color = TradigooTextSecondary,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
                 }
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                orders.take(3).forEach { order ->
+                orders.take(4).forEach { order ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+                        border = BorderStroke(1.dp, TradigooCardBorder)
                     ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "#${order.id}",
-                                    fontSize = 12.sp,
+                                    text = "#${order.id.take(8).uppercase()} • ${formatIsoDate(order.createdAt)}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TradigooTextTertiary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = order.productName,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
+                                    color = TradigooTextPrimary,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "Buyer: ${order.buyerBusinessName?.takeIf { it.isNotBlank() } ?: "Registered Retailer"}",
+                                    fontSize = 12.sp,
                                     color = TradigooTextSecondary
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "• ${order.createdAt}", fontSize = 11.sp, color = TradigooTextTertiary)
                             }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = order.productName,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TradigooTextPrimary,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = "Buyer: ${order.buyerBusinessName ?: "Verified Kirana Store"}",
-                                fontSize = 12.sp,
-                                color = TradigooTextSecondary
-                            )
-                        }
 
-                        Column(horizontalAlignment = Alignment.End) {
-                            StatusBadge(status = order.status)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "₹${order.totalAmount.toInt()}",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TradigooEmeraldDark
-                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Column(horizontalAlignment = Alignment.End) {
+                                StatusBadge(status = order.status)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = formatInr(order.totalAmount),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TradigooNavy
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
-}
 }

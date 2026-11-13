@@ -1,17 +1,16 @@
 package com.tradigoo.app.ui.screens.founder
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,10 +21,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tradigoo.app.BuildConfig
 import com.tradigoo.app.data.api.ApiFounderStats
 import com.tradigoo.app.data.local.SessionManager
 import com.tradigoo.app.data.repository.AdminRepository
+import com.tradigoo.app.data.repository.AuthRepository
 import com.tradigoo.app.domain.model.Resource
+import com.tradigoo.app.ui.components.formatInr
 import com.tradigoo.app.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -39,6 +41,7 @@ fun FounderDashboardScreen(
 ) {
     val context = LocalContext.current
     val repository = remember { AdminRepository(context) }
+    val authRepository = remember { AuthRepository(context) }
     val sessionManager = remember { SessionManager.getInstance(context) }
     val currentUser = sessionManager.getUser()
     val coroutineScope = rememberCoroutineScope()
@@ -46,7 +49,6 @@ fun FounderDashboardScreen(
     var stats by remember { mutableStateOf<ApiFounderStats?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
-    var selectedSection by remember { mutableStateOf("Overview") }
 
     fun loadStats() {
         isLoading = true
@@ -85,19 +87,20 @@ fun FounderDashboardScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(TradigooEmeraldBg)
+                                    .background(TradigooGoldBg)
+                                    .border(1.dp, TradigooGold.copy(alpha = 0.45f), RoundedCornerShape(6.dp))
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = "FOUNDER",
-                                    color = TradigooEmeraldDark,
+                                    color = TradigooNavy,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         }
                         Text(
-                            text = "simarjotkaur514@gmail.com • System Oversight",
+                            text = "${currentUser?.email ?: "Founder"} • Platform Oversight",
                             fontSize = 11.sp,
                             color = TradigooTextSecondary
                         )
@@ -105,9 +108,14 @@ fun FounderDashboardScreen(
                 },
                 actions = {
                     IconButton(onClick = { loadStats() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TradigooBlue)
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TradigooNavy)
                     }
-                    IconButton(onClick = onLogout) {
+                    IconButton(
+                        onClick = {
+                            authRepository.logout()
+                            onLogout()
+                        }
+                    ) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Sign Out", tint = TradigooError)
                     }
                 },
@@ -123,20 +131,19 @@ fun FounderDashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Administrative Preview Banner
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = TradigooSurfaceElevated),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, TradigooBlue.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, TradigooNavy.copy(alpha = 0.25f))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Visibility, contentDescription = null, tint = TradigooBlue, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.Visibility, contentDescription = null, tint = TradigooNavy, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Secure Administrative Previews",
+                                text = "Administrative Workspace Previews",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TradigooTextPrimary
@@ -144,7 +151,7 @@ fun FounderDashboardScreen(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Inspect marketplace views with persistent Founder authorization and full audit logging.",
+                            text = "Inspect retailer, wholesaler, and operations support views.",
                             fontSize = 12.sp,
                             color = TradigooTextSecondary
                         )
@@ -152,21 +159,21 @@ fun FounderDashboardScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = onPreviewRetailer,
-                                colors = ButtonDefaults.buttonColors(containerColor = TradigooBlue),
+                                colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Retailer View", fontSize = 12.sp)
+                                Text("Retailer", fontSize = 12.sp)
                             }
                             Button(
                                 onClick = onPreviewWholesaler,
                                 colors = ButtonDefaults.buttonColors(containerColor = TradigooEmeraldDark),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Wholesaler View", fontSize = 12.sp)
+                                Text("Wholesaler", fontSize = 12.sp)
                             }
                             Button(
                                 onClick = onOpenEmployeePortal,
-                                colors = ButtonDefaults.buttonColors(containerColor = TradigooWarning),
+                                colors = ButtonDefaults.buttonColors(containerColor = TradigooGoldDark),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text("Ops Portal", fontSize = 12.sp)
@@ -176,7 +183,6 @@ fun FounderDashboardScreen(
                 }
             }
 
-            // Platform Health Bar
             item {
                 Row(
                     modifier = Modifier
@@ -197,25 +203,24 @@ fun FounderDashboardScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Live Backend Services",
+                            text = "Backend Services",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = TradigooTextPrimary
                         )
                     }
                     Text(
-                        text = "TLS 1.3 • Supabase PostgreSQL • Gemini 2.5 Flash",
+                        text = "HTTPS • Supabase • Tradigoo API",
                         fontSize = 11.sp,
                         color = TradigooTextSecondary
                     )
                 }
             }
 
-            // Live Metrics Cards
             if (isLoading) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = TradigooBlue)
+                        CircularProgressIndicator(color = TradigooNavy)
                     }
                 }
             } else if (stats != null) {
@@ -223,7 +228,7 @@ fun FounderDashboardScreen(
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
-                            text = "Genuine Database Metrics",
+                            text = "Live Platform Metrics",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = TradigooTextPrimary
@@ -232,7 +237,7 @@ fun FounderDashboardScreen(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             FounderMetricCard(
                                 title = "Gross GMV Volume",
-                                value = "₹${s.platformTransactionVolume.toLong()}",
+                                value = formatInr(s.platformTransactionVolume),
                                 subtitle = "Total orders aggregate",
                                 iconColor = TradigooEmeraldDark,
                                 modifier = Modifier.weight(1f)
@@ -241,7 +246,7 @@ fun FounderDashboardScreen(
                                 title = "Total Orders",
                                 value = "${s.totalOrders}",
                                 subtitle = "${s.pendingOrders} pending • ${s.completedOrders} completed",
-                                iconColor = TradigooBlue,
+                                iconColor = TradigooNavy,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -251,14 +256,14 @@ fun FounderDashboardScreen(
                                 title = "Registered Retailers",
                                 value = "${s.totalRetailers}",
                                 subtitle = "Active buyers in network",
-                                iconColor = TradigooBlue,
+                                iconColor = TradigooNavy,
                                 modifier = Modifier.weight(1f)
                             )
                             FounderMetricCard(
                                 title = "Registered Wholesalers",
                                 value = "${s.totalWholesalers}",
                                 subtitle = "${s.pendingSupplierVerification} pending GST verify",
-                                iconColor = TradigooWarning,
+                                iconColor = TradigooGoldDark,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -283,37 +288,53 @@ fun FounderDashboardScreen(
                 }
             } else if (errorMsg != null) {
                 item {
-                    Text(
-                        text = "Notice: $errorMsg",
-                        color = TradigooError,
-                        fontSize = 13.sp
-                    )
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = StatusErrorBg),
+                        border = BorderStroke(1.dp, StatusError.copy(alpha = 0.25f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = errorMsg!!,
+                                color = TradigooError,
+                                fontSize = 13.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = { loadStats() }) {
+                                Text("Retry", fontWeight = FontWeight.Bold, color = TradigooNavy)
+                            }
+                        }
+                    }
                 }
             }
 
-            // Quick Platform Management Links
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+                    border = BorderStroke(1.dp, TradigooCardBorder)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Platform Audit & Compliance",
+                            text = "Platform Configuration",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = TradigooTextPrimary
                         )
                         Spacer(modifier = Modifier.height(10.dp))
-                        AuditLogRow(label = "Primary Admin", value = "simarjotkaur514@gmail.com")
+                        AuditLogRow(label = "Signed-In Admin", value = currentUser?.email ?: "Founder")
                         HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = TradigooCardBorder.copy(alpha = 0.5f))
-                        AuditLogRow(label = "Operations Employee", value = "tradigoobackendemployee@gmail.com")
+                        AuditLogRow(label = "API Endpoint", value = BuildConfig.API_BASE_URL)
                         HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = TradigooCardBorder.copy(alpha = 0.5f))
-                        AuditLogRow(label = "Database Host", value = "skcbzqbtjdctpxtgglbv.supabase.co")
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = TradigooCardBorder.copy(alpha = 0.5f))
-                        AuditLogRow(label = "Payment Gateway", value = "Razorpay Production / Test")
+                        AuditLogRow(label = "Settlement Escrow", value = "Active (24h Inspection Window)")
                     }
                 }
             }
@@ -333,12 +354,12 @@ private fun FounderMetricCard(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+        border = BorderStroke(1.dp, TradigooCardBorder)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(text = title, fontSize = 12.sp, color = TradigooTextSecondary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = value, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = iconColor)
+            Text(text = value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = iconColor)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = subtitle, fontSize = 11.sp, color = TradigooTextTertiary)
         }

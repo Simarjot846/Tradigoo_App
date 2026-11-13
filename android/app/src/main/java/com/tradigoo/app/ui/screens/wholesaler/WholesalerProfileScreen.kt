@@ -1,5 +1,6 @@
 package com.tradigoo.app.ui.screens.wholesaler
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -7,15 +8,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tradigoo.app.data.api.ApiTrustScoreResponse
 import com.tradigoo.app.domain.model.User
 import com.tradigoo.app.ui.components.GreenScoreMeter
 import com.tradigoo.app.ui.components.TradigooOutlineButton
@@ -24,9 +28,22 @@ import com.tradigoo.app.ui.theme.*
 @Composable
 fun WholesalerProfileScreen(
     user: User?,
+    trustScore: ApiTrustScoreResponse?,
+    isSavingProfile: Boolean = false,
+    onUpdateProfile: (
+        name: String,
+        phone: String?,
+        businessName: String,
+        location: String,
+        gstNumber: String?,
+        businessAddress: String?,
+        pinCode: String?,
+        onSaved: () -> Unit
+    ) -> Unit,
     onLogout: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    var showEditDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -35,12 +52,11 @@ fun WholesalerProfileScreen(
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
-        // Wholesaler Profile Header Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+            border = BorderStroke(1.dp, TradigooCardBorder)
         ) {
             Column(
                 modifier = Modifier
@@ -52,13 +68,14 @@ fun WholesalerProfileScreen(
                     modifier = Modifier
                         .size(68.dp)
                         .clip(CircleShape)
-                        .background(TradigooEmeraldGradient),
+                        .background(TradigooBrandGradient)
+                        .border(2.dp, TradigooGold, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = (user?.name?.take(2) ?: "WP").uppercase(),
-                        color = Color.White,
-                        fontSize = 26.sp,
+                        color = TradigooGoldLight,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -73,23 +90,27 @@ fun WholesalerProfileScreen(
                 )
 
                 Text(
-                    text = if (!user?.businessName.isNullOrBlank()) user!!.businessName else "Registered Supplier Facility",
+                    text = user?.businessName?.takeIf { it.isNotBlank() } ?: "Registered Supplier Facility",
                     fontSize = 14.sp,
                     color = TradigooTextSecondary
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val gstBadgeBg = if (user?.gstVerified == true) TradigooEmeraldBg else TradigooGoldBg
+                val gstBadgeFg = if (user?.gstVerified == true) TradigooEmeraldDark else TradigooNavy
+                val gstBadgeBorder = if (user?.gstVerified == true) TradigooEmerald.copy(alpha = 0.35f) else TradigooGold.copy(alpha = 0.4f)
+
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .background(TradigooEmeraldBg)
-                        .border(1.dp, TradigooEmerald.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                        .background(gstBadgeBg)
+                        .border(1.dp, gstBadgeBorder, RoundedCornerShape(20.dp))
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "🏭 Verified Wholesaler & Supplier",
-                        color = TradigooEmeraldDark,
+                        text = if (user?.gstVerified == true) "GST Verified Supplier" else "Wholesaler & Supplier",
+                        color = gstBadgeFg,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -99,62 +120,69 @@ fun WholesalerProfileScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Wholesaler Credibility Meter (Real score or empty state)
-        if (user != null && user.totalOrders > 0) {
-            GreenScoreMeter(
-                score = user.trustScore,
-                label = "Supplier Credibility & ESG Green Rating"
-            )
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Trust & Reliability Score",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TradigooTextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Your supplier trust score will be calculated dynamically based on real fulfillment track record, on-time dispatches, and resolution history.",
-                        fontSize = 13.sp,
-                        color = TradigooTextSecondary
-                    )
-                }
-            }
-        }
+        val hasTrustData = trustScore?.hasEnoughData ?: ((user?.totalOrders ?: 0) >= 3)
+        GreenScoreMeter(
+            score = trustScore?.score ?: if (hasTrustData) user?.trustScore else null,
+            hasEnoughData = hasTrustData,
+            badgeText = trustScore?.label,
+            subtitleText = trustScore?.explanation,
+            label = "Supplier Credibility & Reliability Rating"
+        )
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Business Credentials (Real data)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+            border = BorderStroke(1.dp, TradigooCardBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Enterprise Supplier Details",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TradigooTextPrimary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Enterprise Supplier Details",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TradigooTextPrimary
+                    )
+                    TextButton(onClick = { showEditDialog = true }) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(15.dp), tint = TradigooNavy)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Edit", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TradigooNavy)
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 ProfileDetailRow(label = "Official Email", value = user?.email ?: "Not Available")
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = TradigooCardBorder.copy(alpha = 0.5f))
-                ProfileDetailRow(label = "Contact Phone", value = if (!user?.phone.isNullOrBlank()) user!!.phone!! else "Pending Verification")
+                ProfileDetailRow(
+                    label = "Contact Phone",
+                    value = user?.phone?.takeIf { it.isNotBlank() } ?: "Not Added"
+                )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = TradigooCardBorder.copy(alpha = 0.5f))
-                ProfileDetailRow(label = "Facility Location", value = if (!user?.location.isNullOrBlank()) user!!.location else "India")
+                ProfileDetailRow(
+                    label = "Facility Location",
+                    value = user?.location?.takeIf { it.isNotBlank() } ?: "India"
+                )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = TradigooCardBorder.copy(alpha = 0.5f))
-                ProfileDetailRow(label = "Verification Status", value = "GST & Business Compliance Pending Review")
+                ProfileDetailRow(
+                    label = "GSTIN",
+                    value = user?.gstNumber?.takeIf { it.isNotBlank() } ?: "Not Provided"
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = TradigooCardBorder.copy(alpha = 0.5f))
+                ProfileDetailRow(
+                    label = "GST Compliance",
+                    value = when {
+                        user?.gstVerified == true -> "Verified"
+                        !user?.gstNumber.isNullOrBlank() -> "Submitted (Under Review)"
+                        else -> "GSTIN Not Added"
+                    }
+                )
             }
         }
 
@@ -168,11 +196,103 @@ fun WholesalerProfileScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Tradigoo Native Android Edition • Production Architecture",
+            text = "Tradigoo B2B Wholesale • India",
             fontSize = 11.sp,
             color = TradigooTextTertiary,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
+        )
+    }
+
+    if (showEditDialog) {
+        var editName by remember { mutableStateOf(user?.name ?: "") }
+        var editPhone by remember { mutableStateOf(user?.phone ?: "") }
+        var editBusiness by remember { mutableStateOf(user?.businessName ?: "") }
+        var editLocation by remember { mutableStateOf(user?.location ?: "") }
+        var editGstin by remember { mutableStateOf(user?.gstNumber ?: "") }
+        var editAddress by remember { mutableStateOf(user?.businessAddress ?: "") }
+        var editPin by remember { mutableStateOf(user?.pinCode ?: "") }
+
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Supplier Profile", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Full Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editBusiness,
+                        onValueChange = { editBusiness = it },
+                        label = { Text("Business / Mill Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editPhone,
+                        onValueChange = { editPhone = it },
+                        label = { Text("Phone Number") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editLocation,
+                        onValueChange = { editLocation = it },
+                        label = { Text("City / State") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editGstin,
+                        onValueChange = { editGstin = it.uppercase() },
+                        label = { Text("GSTIN (15-Char)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editAddress,
+                        onValueChange = { editAddress = it },
+                        label = { Text("Warehouse / Mill Address") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editPin,
+                        onValueChange = { if (it.length <= 6 && it.all(Char::isDigit)) editPin = it },
+                        label = { Text("PIN Code") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = !isSavingProfile && editName.isNotBlank() && editBusiness.isNotBlank(),
+                    onClick = {
+                        onUpdateProfile(
+                            editName,
+                            editPhone.ifBlank { null },
+                            editBusiness,
+                            editLocation.ifBlank { "India" },
+                            editGstin.ifBlank { null },
+                            editAddress.ifBlank { null },
+                            editPin.ifBlank { null }
+                        ) {
+                            showEditDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
+                ) {
+                    Text(if (isSavingProfile) "Saving..." else "Save Changes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text("Cancel") }
+            }
         )
     }
 }

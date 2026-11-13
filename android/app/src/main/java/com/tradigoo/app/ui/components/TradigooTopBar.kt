@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -53,30 +52,30 @@ fun TradigooTopBar(
                         painter = painterResource(id = R.drawable.logo_tradigoo),
                         contentDescription = "Tradigoo",
                         modifier = Modifier
-                            .height(32.dp)
-                            .width(136.dp),
+                            .height(30.dp)
+                            .width(128.dp),
                         contentScale = ContentScale.Fit
                     )
 
                     if (userRole != null) {
                         Spacer(modifier = Modifier.width(10.dp))
-                        val isRetailer = userRole == UserRole.RETAILER
+                        val isWholesaler = userRole == UserRole.WHOLESALER
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(if (isRetailer) TradigooBlueBg else TradigooEmeraldBg)
+                                .background(if (isWholesaler) TradigooEmeraldBg else TradigooGoldBg)
                                 .border(
                                     1.dp,
-                                    if (isRetailer) TradigooBlue.copy(alpha = 0.3f) else TradigooEmerald.copy(alpha = 0.3f),
+                                    if (isWholesaler) TradigooEmerald.copy(alpha = 0.3f) else TradigooGold.copy(alpha = 0.4f),
                                     RoundedCornerShape(6.dp)
                                 )
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = userRole.displayName.uppercase(),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isRetailer) TradigooBlue else TradigooEmerald
+                                color = if (isWholesaler) TradigooEmeraldDark else TradigooNavy
                             )
                         }
                     }
@@ -100,7 +99,7 @@ fun TradigooTopBar(
                     badge = {
                         if (cartCount > 0) {
                             Badge(
-                                containerColor = TradigooBlue,
+                                containerColor = TradigooGoldDark,
                                 contentColor = Color.White
                             ) {
                                 Text(text = cartCount.toString())
@@ -113,7 +112,7 @@ fun TradigooTopBar(
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
                             contentDescription = "Cart",
-                            tint = TradigooTextPrimary
+                            tint = TradigooNavy
                         )
                     }
                 }
@@ -126,12 +125,13 @@ fun TradigooTopBar(
                         .size(36.dp)
                         .clip(CircleShape)
                         .background(TradigooNavy)
+                        .border(1.5.dp, TradigooGold, CircleShape)
                         .clickable { onProfileClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = userInitials.take(2).uppercase(),
-                        color = Color.White,
+                        color = TradigooGoldLight,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )

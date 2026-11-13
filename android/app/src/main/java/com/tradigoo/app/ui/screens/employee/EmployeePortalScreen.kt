@@ -1,16 +1,17 @@
 package com.tradigoo.app.ui.screens.employee
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,12 +20,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tradigoo.app.data.api.ApiSupportTicket
 import com.tradigoo.app.data.local.SessionManager
+import com.tradigoo.app.data.repository.AuthRepository
 import com.tradigoo.app.data.repository.SupportTicketRepository
 import com.tradigoo.app.domain.model.Resource
+import com.tradigoo.app.ui.components.formatIsoDate
 import com.tradigoo.app.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -35,29 +39,38 @@ fun EmployeePortalScreen(
 ) {
     val context = LocalContext.current
     val repository = remember { SupportTicketRepository(context) }
+    val authRepository = remember { AuthRepository(context) }
     val sessionManager = remember { SessionManager.getInstance(context) }
     val currentUser = sessionManager.getUser()
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var tickets by remember { mutableStateOf<List<ApiSupportTicket>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isUpdatingTicket by remember { mutableStateOf(false) }
+    var loadError by remember { mutableStateOf<String?>(null) }
     var selectedFilter by remember { mutableStateOf("ALL") }
     var selectedTicket by remember { mutableStateOf<ApiSupportTicket?>(null) }
 
-    // Dialog state for adding notes or replying
     var showActionDialog by remember { mutableStateOf(false) }
     var actionNoteText by remember { mutableStateOf("") }
     var actionReplyText by remember { mutableStateOf("") }
-    var actionResolutionText by remember { mutableStateOf("") }
-    var actionType by remember { mutableStateOf("NOTE") } // "NOTE", "REPLY", "RESOLVE", "STATUS"
+    var actionType by remember { mutableStateOf("NOTE") }
     var newStatusChoice by remember { mutableStateOf("IN_PROGRESS") }
 
     fun refreshTickets() {
         isLoading = true
+        loadError = null
         coroutineScope.launch {
-            val res = repository.getTickets()
-            if (res is Resource.Success) {
-                tickets = res.data
+            when (val res = repository.getTickets()) {
+                is Resource.Success -> {
+                    tickets = res.data
+                }
+                is Resource.Error -> {
+                    loadError = res.message
+                    snackbarHostState.showSnackbar(res.message)
+                }
+                else -> {}
             }
             isLoading = false
         }
@@ -78,6 +91,7 @@ fun EmployeePortalScreen(
     val escalatedCount = tickets.count { it.status.equals("ESCALATED", ignoreCase = true) }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -89,17 +103,22 @@ fun EmployeePortalScreen(
                             color = TradigooTextPrimary
                         )
                         Text(
-                            text = "Employee Portal • ${currentUser?.email ?: "tradigoobackendemployee@gmail.com"}",
+                            text = "Operations • ${currentUser?.email ?: "Support Team"}",
                             fontSize = 12.sp,
-                            color = TradigooBlue
+                            color = TradigooNavy
                         )
                     }
                 },
                 actions = {
                     IconButton(onClick = { refreshTickets() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TradigooBlue)
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TradigooNavy)
                     }
-                    IconButton(onClick = onLogout) {
+                    IconButton(
+                        onClick = {
+                            authRepository.logout()
+                            onLogout()
+                        }
+                    ) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Sign Out", tint = TradigooError)
                     }
                 },
@@ -114,12 +133,11 @@ fun EmployeePortalScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Metrics Summary Cards
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MetricChip(label = "New", count = newCount, color = TradigooBlue, modifier = Modifier.weight(1f))
+                MetricChip(label = "New", count = newCount, color = TradigooNavy, modifier = Modifier.weight(1f))
                 MetricChip(label = "In Progress", count = inProgressCount, color = TradigooWarning, modifier = Modifier.weight(1f))
                 MetricChip(label = "Escalated", count = escalatedCount, color = TradigooError, modifier = Modifier.weight(1f))
                 MetricChip(label = "Resolved", count = resolvedCount, color = TradigooEmeraldDark, modifier = Modifier.weight(1f))
@@ -127,7 +145,6 @@ fun EmployeePortalScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Filter Tabs
             val filterOptions = listOf("ALL", "NEW", "ASSIGNED", "IN_PROGRESS", "ESCALATED", "RESOLVED")
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(filterOptions) { opt ->
@@ -141,10 +158,32 @@ fun EmployeePortalScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Ticket List
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = TradigooBlue)
+                    CircularProgressIndicator(color = TradigooNavy)
+                }
+            } else if (loadError != null && tickets.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = loadError ?: "Unable to load support queue.",
+                            fontSize = 14.sp,
+                            color = TradigooError,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = { refreshTickets() },
+                            colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
+                        ) {
+                            Text("Retry")
+                        }
+                    }
                 }
             } else if (filteredTickets.isEmpty()) {
                 Box(
@@ -168,16 +207,16 @@ fun EmployeePortalScreen(
                             color = TradigooTextPrimary
                         )
                         Text(
-                            text = "All customer issues and order inquiries are up to date.",
+                            text = "All customer inquiries for this filter are up to date.",
                             fontSize = 13.sp,
                             color = TradigooTextSecondary,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(filteredTickets) { ticket ->
+                    items(filteredTickets, key = { it.id }) { ticket ->
                         TicketCard(
                             ticket = ticket,
                             onClick = { selectedTicket = ticket }
@@ -188,7 +227,6 @@ fun EmployeePortalScreen(
         }
     }
 
-    // Detail & Action Dialog
     if (selectedTicket != null) {
         val ticket = selectedTicket!!
         AlertDialog(
@@ -201,10 +239,12 @@ fun EmployeePortalScreen(
                 ) {
                     Text(
                         text = "${ticket.ticketNumber} • ${ticket.category}",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
                     )
-                    StatusBadge(status = ticket.status)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TicketStatusBadge(status = ticket.status)
                 }
             },
             text = {
@@ -212,8 +252,11 @@ fun EmployeePortalScreen(
                     Text(text = ticket.subject, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TradigooTextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Customer: ${ticket.customerName} (${ticket.customerEmail})", fontSize = 12.sp, color = TradigooTextSecondary)
+                    if (!ticket.createdAt.isNullOrBlank()) {
+                        Text(text = "Opened: ${formatIsoDate(ticket.createdAt)}", fontSize = 11.sp, color = TradigooTextTertiary)
+                    }
                     if (ticket.orderId != null) {
-                        Text(text = "Related Order: #${ticket.orderId.take(8)}", fontSize = 12.sp, color = TradigooBlue)
+                        Text(text = "Related Order: #${ticket.orderId.take(8).uppercase()}", fontSize = 12.sp, color = TradigooNavy)
                     }
                     if (ticket.assignedTo != null) {
                         Text(text = "Assigned To: ${ticket.assignedTo}", fontSize = 12.sp, color = TradigooTextSecondary)
@@ -234,7 +277,12 @@ fun EmployeePortalScreen(
 
                     if (!ticket.resolutionNotes.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Resolution: ${ticket.resolutionNotes}", fontSize = 12.sp, color = TradigooEmeraldDark, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "Resolution: ${ticket.resolutionNotes}",
+                            fontSize = 12.sp,
+                            color = TradigooEmeraldDark,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             },
@@ -245,9 +293,9 @@ fun EmployeePortalScreen(
                             actionType = "NOTE"
                             showActionDialog = true
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = TradigooBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
                     ) {
-                        Text("Add Note", fontSize = 12.sp)
+                        Text("Note", fontSize = 12.sp)
                     }
                     Button(
                         onClick = {
@@ -261,9 +309,10 @@ fun EmployeePortalScreen(
                     Button(
                         onClick = {
                             actionType = "STATUS"
+                            newStatusChoice = ticket.status
                             showActionDialog = true
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = TradigooWarning)
+                        colors = ButtonDefaults.buttonColors(containerColor = TradigooGoldDark)
                     ) {
                         Text("Status", fontSize = 12.sp)
                     }
@@ -277,18 +326,17 @@ fun EmployeePortalScreen(
         )
     }
 
-    // Modal Sub-Action Dialog
     if (showActionDialog && selectedTicket != null) {
         val ticket = selectedTicket!!
         AlertDialog(
-            onDismissRequest = { showActionDialog = false },
+            onDismissRequest = { if (!isUpdatingTicket) showActionDialog = false },
             title = {
                 Text(
                     text = when (actionType) {
                         "NOTE" -> "Add Internal Note"
                         "REPLY" -> "Send Customer Reply"
                         "STATUS" -> "Change Ticket Status"
-                        else -> "Resolve Ticket"
+                        else -> "Update Ticket"
                     },
                     fontWeight = FontWeight.Bold
                 )
@@ -332,47 +380,58 @@ fun EmployeePortalScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    coroutineScope.launch {
-                        when (actionType) {
-                            "NOTE" -> {
-                                if (actionNoteText.isNotBlank()) {
-                                    repository.updateTicket(
-                                        id = ticket.id,
-                                        internalNote = actionNoteText,
-                                        senderName = currentUser?.name ?: "Support Agent"
-                                    )
-                                    actionNoteText = ""
-                                }
-                            }
-                            "REPLY" -> {
-                                if (actionReplyText.isNotBlank()) {
-                                    repository.updateTicket(
-                                        id = ticket.id,
-                                        replyMessage = actionReplyText,
-                                        senderName = currentUser?.name ?: "Support Agent"
-                                    )
-                                    actionReplyText = ""
-                                }
-                            }
-                            "STATUS" -> {
-                                repository.updateTicket(
+                val canSubmit = !isUpdatingTicket && when (actionType) {
+                    "NOTE" -> actionNoteText.isNotBlank()
+                    "REPLY" -> actionReplyText.isNotBlank()
+                    else -> true
+                }
+                Button(
+                    enabled = canSubmit,
+                    colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy),
+                    onClick = {
+                        coroutineScope.launch {
+                            isUpdatingTicket = true
+                            val result = when (actionType) {
+                                "NOTE" -> repository.updateTicket(
+                                    id = ticket.id,
+                                    internalNote = actionNoteText.trim(),
+                                    senderName = currentUser?.name ?: "Support Agent"
+                                )
+                                "REPLY" -> repository.updateTicket(
+                                    id = ticket.id,
+                                    replyMessage = actionReplyText.trim(),
+                                    senderName = currentUser?.name ?: "Support Agent"
+                                )
+                                else -> repository.updateTicket(
                                     id = ticket.id,
                                     status = newStatusChoice,
-                                    assignedTo = currentUser?.email ?: "tradigoobackendemployee@gmail.com"
+                                    assignedTo = currentUser?.email ?: "Operations Staff"
                                 )
                             }
+                            isUpdatingTicket = false
+
+                            when (result) {
+                                is Resource.Success -> {
+                                    actionNoteText = ""
+                                    actionReplyText = ""
+                                    showActionDialog = false
+                                    selectedTicket = null
+                                    snackbarHostState.showSnackbar("Ticket ${ticket.ticketNumber} updated.")
+                                    refreshTickets()
+                                }
+                                is Resource.Error -> {
+                                    snackbarHostState.showSnackbar(result.message)
+                                }
+                                else -> {}
+                            }
                         }
-                        showActionDialog = false
-                        selectedTicket = null
-                        refreshTickets()
                     }
-                }) {
-                    Text("Apply")
+                ) {
+                    Text(if (isUpdatingTicket) "Updating..." else "Apply")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showActionDialog = false }) {
+                TextButton(enabled = !isUpdatingTicket, onClick = { showActionDialog = false }) {
                     Text("Cancel")
                 }
             }
@@ -388,7 +447,7 @@ private fun TicketCard(ticket: ApiSupportTicket, onClick: () -> Unit) {
             .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+        border = BorderStroke(1.dp, TradigooCardBorder)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -400,9 +459,9 @@ private fun TicketCard(ticket: ApiSupportTicket, onClick: () -> Unit) {
                     text = ticket.ticketNumber,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TradigooBlue
+                    color = TradigooNavy
                 )
-                StatusBadge(status = ticket.status)
+                TicketStatusBadge(status = ticket.status)
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -426,10 +485,10 @@ private fun TicketCard(ticket: ApiSupportTicket, onClick: () -> Unit) {
 }
 
 @Composable
-private fun StatusBadge(status: String) {
+private fun TicketStatusBadge(status: String) {
     val (bg, fg) = when (status.uppercase()) {
-        "NEW" -> Pair(TradigooBlueBg, TradigooBlue)
-        "ASSIGNED", "IN_PROGRESS" -> Pair(TradigooWarningBg, TradigooWarning)
+        "NEW" -> Pair(TradigooNavyBg, TradigooNavy)
+        "ASSIGNED", "IN_PROGRESS", "WAITING_FOR_CUSTOMER" -> Pair(TradigooWarningBg, TradigooWarning)
         "ESCALATED" -> Pair(TradigooErrorBg, TradigooError)
         "RESOLVED", "CLOSED" -> Pair(TradigooEmeraldBg, TradigooEmeraldDark)
         else -> Pair(TradigooSurfaceElevated, TradigooTextSecondary)
@@ -437,7 +496,7 @@ private fun StatusBadge(status: String) {
 
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(bg)
             .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
@@ -451,7 +510,7 @@ private fun MetricChip(label: String, count: Int, color: Color, modifier: Modifi
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+        border = BorderStroke(1.dp, TradigooCardBorder)
     ) {
         Column(
             modifier = Modifier

@@ -7,36 +7,52 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tradigoo.app.data.api.ApiTrustScoreResponse
+import com.tradigoo.app.domain.model.Order
 import com.tradigoo.app.domain.model.Product
 import com.tradigoo.app.domain.model.User
 import com.tradigoo.app.ui.components.GreenScoreMeter
-import com.tradigoo.app.ui.components.StatusBadge
+import com.tradigoo.app.ui.components.ProductThumbnail
+import com.tradigoo.app.ui.components.formatInr
 import com.tradigoo.app.ui.theme.*
 
 @Composable
 fun RetailerHomeScreen(
     user: User?,
+    trustScore: ApiTrustScoreResponse?,
     products: List<Product>,
+    orders: List<Order>,
+    isLoading: Boolean,
+    onRefresh: () -> Unit,
+    onCategorySelected: (String) -> Unit,
     onNavigateToDiscover: () -> Unit,
     onNavigateToOrders: () -> Unit,
     onAddToCart: (Product) -> Unit
 ) {
     val scrollState = rememberScrollState()
+
+    val activeEscrowOrders = orders.count {
+        val s = it.normalizedStatus()
+        s == "payment_in_escrow" || s == "shipped" || s == "courier_verified" || s == "delivered" || s == "inspection"
+    }
+    val completedOrdersCount = orders.count { it.normalizedStatus() == "completed" }
+    val disputedOrdersCount = orders.count { it.normalizedStatus() == "disputed" }
 
     Column(
         modifier = Modifier
@@ -45,7 +61,7 @@ fun RetailerHomeScreen(
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
-        // Welcome Card
+        // Store Dashboard Banner (Deep Navy & Gold)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -55,11 +71,7 @@ fun RetailerHomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(Color(0xFF1E3A8A), Color(0xFF3B82F6))
-                        )
-                    )
+                    .background(TradigooBrandGradient)
                     .padding(20.dp)
             ) {
                 Column {
@@ -69,32 +81,48 @@ fun RetailerHomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "STORE DASHBOARD",
-                            color = Color.White.copy(alpha = 0.8f),
+                            text = "RETAIL SOURCING DESK",
+                            color = TradigooGoldLight,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White.copy(alpha = 0.2f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "Zero Buyer Fees",
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.White.copy(alpha = 0.14f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "Escrow Protected",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            IconButton(
+                                onClick = onRefresh,
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Refresh",
+                                    tint = TradigooGoldLight,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = user?.businessName ?: "Gupta Kirana Store",
+                        text = user?.businessName?.takeIf { it.isNotBlank() }
+                            ?: user?.name?.takeIf { it.isNotBlank() }
+                            ?: "Retail Partner",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -102,88 +130,79 @@ fun RetailerHomeScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Text(
-                        text = "📍 ${user?.location ?: "Jaipur, Rajasthan"} • Verified Retailer",
-                        fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = TradigooGoldLight,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${user?.location?.takeIf { it.isNotBlank() } ?: "India"} • Registered Retailer",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.88f)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Quick Stats Bar
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color.Black.copy(alpha = 0.25f))
+                            .clickable { onNavigateToOrders() }
                             .padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text(text = "Escrow Orders", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-                            Text(text = "3 Active", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(text = "Active Escrow", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                            Text(
+                                text = "$activeEscrowOrders Orders",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         }
                         Column {
-                            Text(text = "Avg Margins", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-                            Text(text = "18.4%", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TradigooEmeraldLight)
+                            Text(text = "Completed", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                            Text(
+                                text = "$completedOrdersCount",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TradigooEmeraldLight
+                            )
                         }
                         Column {
                             Text(text = "Disputes", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-                            Text(text = "0 Defaults", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                text = "$disputedOrdersCount",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (disputedOrdersCount > 0) Color(0xFFFCA5A5) else Color.White
+                            )
                         }
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Live Market Ticker Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(TradigooEmerald)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "LIVE COMMODITY INDEX: ",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TradigooTextPrimary
-                )
-                Text(
-                    text = "Wheat ₹36.50 (+1.2%) • Toor Dal ₹145 (-0.8%) • Mustard Oil ₹138 (Stable)",
-                    fontSize = 11.sp,
-                    color = TradigooTextSecondary,
-                    maxLines = 1
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // Green Score Widget
+        // Live Trust Rating Card
+        val hasTrustData = trustScore?.hasEnoughData ?: ((user?.totalOrders ?: 0) >= 3)
         GreenScoreMeter(
-            score = user?.trustScore ?: 520,
+            score = trustScore?.score ?: if (hasTrustData) user?.trustScore else null,
+            hasEnoughData = hasTrustData,
+            badgeText = trustScore?.label,
+            subtitleText = trustScore?.explanation,
             label = "Retailer Trust & Reliability Rating"
         )
 
         Spacer(modifier = Modifier.height(22.dp))
 
-        // Section: Top Sourcing Categories
+        // Categories Section
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -199,14 +218,14 @@ fun RetailerHomeScreen(
                 text = "View All →",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TradigooBlue,
+                color = TradigooGoldDark,
                 modifier = Modifier.clickable { onNavigateToDiscover() }
             )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        val categories = listOf("Grains", "Pulses", "Oils", "Spices", "Sweeteners", "Flours", "Beverages")
+        val categories = listOf("Grains", "Pulses", "Oils", "Spices", "Sweeteners", "Flours", "Beverages", "Electronics", "Fashion")
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -216,14 +235,14 @@ fun RetailerHomeScreen(
                         .clip(RoundedCornerShape(12.dp))
                         .background(TradigooSurface)
                         .border(1.dp, TradigooCardBorder, RoundedCornerShape(12.dp))
-                        .clickable { onNavigateToDiscover() }
+                        .clickable { onCategorySelected(cat) }
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                 ) {
                     Text(
                         text = cat,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = TradigooTextPrimary
+                        color = TradigooNavy
                     )
                 }
             }
@@ -231,14 +250,14 @@ fun RetailerHomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Section: High Margin Recommendations
+        // Live Catalog Picks
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "High-Margin Recommendations",
+                text = "Featured Wholesale Listings",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = TradigooTextPrimary
@@ -247,14 +266,23 @@ fun RetailerHomeScreen(
                 text = "Marketplace",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TradigooBlue,
+                color = TradigooGoldDark,
                 modifier = Modifier.clickable { onNavigateToDiscover() }
             )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (products.isEmpty()) {
+        if (isLoading && products.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = TradigooNavy)
+            }
+        } else if (products.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -267,111 +295,109 @@ fun RetailerHomeScreen(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "🌾", fontSize = 32.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Connecting to Wholesale Catalog",
+                        text = "No Active Listings Available",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TradigooTextPrimary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Wholesale commodities are loaded live from verified suppliers.",
+                        text = "Refresh or browse the marketplace to check newly added supplier listings.",
                         fontSize = 12.sp,
                         color = TradigooTextSecondary,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
-                        onClick = onNavigateToDiscover,
-                        colors = ButtonDefaults.buttonColors(containerColor = TradigooBlue)
+                        onClick = onRefresh,
+                        colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
                     ) {
-                        Text("Explore Marketplace")
+                        Text("Refresh Catalog")
                     }
                 }
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                products.take(4).forEach { product ->
+                products.take(5).forEach { product ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNavigateToDiscover() },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = TradigooSurface),
                         border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
                     ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
+                        Row(
                             modifier = Modifier
-                                .size(50.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(TradigooBlueBg),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = when (product.category) {
-                                    "Grains" -> "🌾"
-                                    "Pulses" -> "🫘"
-                                    "Oils" -> "🛢️"
-                                    "Spices" -> "🌶️"
-                                    "Sweeteners" -> "🍯"
-                                    "Flours" -> "🥣"
-                                    else -> "📦"
-                                },
-                                fontSize = 24.sp
+                            ProductThumbnail(
+                                imageUrl = product.imageUrl,
+                                contentDescription = product.name,
+                                size = 56.dp
                             )
-                        }
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = product.name,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TradigooTextPrimary,
-                                maxLines = 1
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "₹${product.basePrice}/${product.unit}",
-                                    fontSize = 14.sp,
+                                    text = product.name,
+                                    fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TradigooBlue
+                                    color = TradigooTextPrimary,
+                                    maxLines = 1
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "MOQ: ${product.minOrderQuantity} ${product.unit}",
-                                    fontSize = 12.sp,
-                                    color = TradigooTextSecondary
-                                )
+                                if (!product.sellerBusinessName.isNullOrBlank()) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = product.sellerBusinessName,
+                                            fontSize = 11.5.sp,
+                                            color = TradigooTextSecondary,
+                                            maxLines = 1
+                                        )
+                                        if (product.sellerGstVerified) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.VerifiedUser,
+                                                contentDescription = "GST Verified",
+                                                tint = TradigooEmerald,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "${formatInr(product.basePrice)}/${product.unit}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TradigooNavy
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "MOQ: ${product.minOrderQuantity} ${product.unit}",
+                                        fontSize = 11.5.sp,
+                                        color = TradigooTextSecondary
+                                    )
+                                }
                             }
-                            Text(
-                                text = "Est. Margin: +${product.expectedMargin}%",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TradigooEmerald
-                            )
-                        }
 
-                        Button(
-                            onClick = { onAddToCart(product) },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = TradigooBlue),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                        ) {
-                            Text(text = "Source", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Button(
+                                onClick = { onAddToCart(product) },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
+                                Text(text = "Source", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
             }
         }
     }
-}
 }

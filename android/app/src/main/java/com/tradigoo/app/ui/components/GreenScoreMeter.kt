@@ -17,11 +17,36 @@ import com.tradigoo.app.ui.theme.*
 
 @Composable
 fun GreenScoreMeter(
-    score: Int,
-    label: String = "Green & Trust Score",
+    score: Int?,
+    label: String = "Tradigoo Trust Score",
+    hasEnoughData: Boolean = true,
+    badgeText: String? = null,
+    subtitleText: String? = null,
     modifier: Modifier = Modifier
 ) {
-    val progress = (score.coerceIn(0, 1000) / 1000f)
+    val safeScore = score?.coerceIn(0, 1000) ?: 0
+    val progress = if (hasEnoughData && score != null) (safeScore / 1000f) else 0f
+
+    val resolvedBadge = badgeText ?: when {
+        !hasEnoughData || score == null -> "New Account"
+        safeScore >= 750 -> "Elite Verified"
+        safeScore >= 550 -> "Trusted Partner"
+        safeScore >= 350 -> "Standard Partner"
+        else -> "Review Required"
+    }
+
+    val badgeColor = when {
+        !hasEnoughData || score == null -> TradigooGoldLight
+        safeScore >= 550 -> TradigooEmeraldLight
+        safeScore >= 350 -> TradigooGoldLight
+        else -> Color(0xFFFCA5A5)
+    }
+
+    val resolvedSubtitle = subtitleText ?: if (!hasEnoughData || score == null) {
+        "Complete at least 3 verified orders to unlock your live Tradigoo Trust Score."
+    } else {
+        "Calculated from completed orders, zero unresolved disputes & GST verification."
+    }
 
     Column(
         modifier = modifier
@@ -39,13 +64,13 @@ fun GreenScoreMeter(
                 Text(
                     text = label,
                     fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = Color.White.copy(alpha = 0.72f),
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "$score / 1000",
-                    fontSize = 22.sp,
-                    color = TradigooEmeraldLight,
+                    text = if (hasEnoughData && score != null) "$safeScore / 1000" else "Insufficient Data",
+                    fontSize = 21.sp,
+                    color = if (hasEnoughData && score != null) TradigooGoldLight else Color.White,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -53,43 +78,44 @@ fun GreenScoreMeter(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(TradigooEmerald.copy(alpha = 0.2f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .background(Color.White.copy(alpha = 0.12f))
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text = "🌱 Top 5% Verified",
+                    text = resolvedBadge,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TradigooEmeraldLight
+                    color = badgeColor
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Progress bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.1f))
+                .background(Color.White.copy(alpha = 0.12f))
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction = progress)
-                    .fillMaxHeight()
-                    .clip(CircleShape)
-                    .background(TradigooEmerald)
-            )
+            if (progress > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(fraction = progress)
+                        .fillMaxHeight()
+                        .clip(CircleShape)
+                        .background(if (safeScore >= 550) TradigooEmerald else TradigooGold)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Calculated from zero payment disputes, punctual dispatch & high delivery success.",
+            text = resolvedSubtitle,
             fontSize = 11.sp,
-            color = Color.White.copy(alpha = 0.6f),
+            color = Color.White.copy(alpha = 0.65f),
             lineHeight = 15.sp
         )
     }

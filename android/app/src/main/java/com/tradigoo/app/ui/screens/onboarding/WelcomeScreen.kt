@@ -156,7 +156,7 @@ fun WelcomeScreen(
                             text = "Sign In",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TradigooBlue,
+                            color = TradigooGoldDark,
                             modifier = Modifier
                                 .clickable { onNavigateToLogin() }
                                 .padding(horizontal = 4.dp, vertical = 6.dp)
@@ -187,7 +187,6 @@ fun WelcomeScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Transparent Official Full Tradigoo Logo (Preserves aspect ratio, perfectly centered, no white container)
             Image(
                 painter = painterResource(id = R.drawable.logo_tradigoo),
                 contentDescription = "Tradigoo",
@@ -200,19 +199,18 @@ fun WelcomeScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Value Tag Badge
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .background(TradigooBlueBg)
-                    .border(1.dp, TradigooBlue.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .background(TradigooGoldBg)
+                    .border(1.dp, TradigooGold.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "✨ Direct Factory-to-Retail OS",
+                    text = "Direct Factory-to-Retail OS",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TradigooBlue
+                    color = TradigooNavy
                 )
             }
 
@@ -231,7 +229,7 @@ fun WelcomeScreen(
                 text = "Smarter sourcing starts here.",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TradigooBlue,
+                color = TradigooNavy,
                 textAlign = TextAlign.Center
             )
 

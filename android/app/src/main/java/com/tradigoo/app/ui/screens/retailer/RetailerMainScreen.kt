@@ -1,6 +1,5 @@
 package com.tradigoo.app.ui.screens.retailer
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -31,15 +30,25 @@ fun RetailerMainScreen(
     var selectedTab by remember { mutableStateOf<RetailerTab>(RetailerTab.Home) }
     var showAiAssistant by remember { mutableStateOf(false) }
 
-    val cartCount = uiState.cartItems.sumOf { it.quantity }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val cartCount = uiState.cartItems.size
+
+    LaunchedEffect(uiState.error, uiState.actionMessage) {
+        val msg = uiState.error ?: uiState.actionMessage
+        if (!msg.isNullOrBlank()) {
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearFeedback()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             Column {
                 if (isPreview) {
                     Surface(
-                        color = TradigooBlueBg,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooBlue.copy(alpha = 0.4f)),
+                        color = TradigooGoldBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooGold.copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -51,14 +60,14 @@ fun RetailerMainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "👀 ADMINISTRATIVE PREVIEW MODE (FOUNDER)",
+                                text = "ADMINISTRATIVE PREVIEW MODE (FOUNDER)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TradigooBlue
+                                color = TradigooNavy
                             )
                             if (onExitPreview != null) {
                                 TextButton(onClick = onExitPreview) {
-                                    Text("Exit Preview", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("Exit Preview", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TradigooNavy)
                                 }
                             }
                         }
@@ -77,12 +86,12 @@ fun RetailerMainScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAiAssistant = true },
-                containerColor = TradigooBlue,
-                contentColor = Color.White,
+                containerColor = TradigooNavy,
+                contentColor = TradigooGoldLight,
                 shape = CircleShape,
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = "Tradigoo AI Assistant")
+                Icon(Icons.Default.AutoAwesome, contentDescription = "Tradigoo Assistant")
             }
         },
         bottomBar = {
@@ -90,28 +99,26 @@ fun RetailerMainScreen(
                 containerColor = TradigooSurface,
                 tonalElevation = 8.dp
             ) {
+                val navColors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = TradigooNavy,
+                    selectedTextColor = TradigooNavy,
+                    indicatorColor = TradigooGoldBg
+                )
+
                 NavigationBarItem(
                     selected = selectedTab == RetailerTab.Home,
                     onClick = { selectedTab = RetailerTab.Home },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                     label = { Text("Home", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooBlue,
-                        selectedTextColor = TradigooBlue,
-                        indicatorColor = TradigooBlueBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
                     selected = selectedTab == RetailerTab.Discover,
                     onClick = { selectedTab = RetailerTab.Discover },
-                    icon = { Icon(Icons.Default.Storefront, contentDescription = "Discover") },
+                    icon = { Icon(Icons.Default.Storefront, contentDescription = "Market") },
                     label = { Text("Market", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooBlue,
-                        selectedTextColor = TradigooBlue,
-                        indicatorColor = TradigooBlueBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
@@ -119,11 +126,7 @@ fun RetailerMainScreen(
                     onClick = { selectedTab = RetailerTab.Orders },
                     icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Orders") },
                     label = { Text("Orders", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooBlue,
-                        selectedTextColor = TradigooBlue,
-                        indicatorColor = TradigooBlueBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
@@ -134,7 +137,7 @@ fun RetailerMainScreen(
                             badge = {
                                 if (cartCount > 0) {
                                     Badge(
-                                        containerColor = TradigooBlue,
+                                        containerColor = TradigooGoldDark,
                                         contentColor = Color.White
                                     ) {
                                         Text(text = cartCount.toString())
@@ -146,11 +149,7 @@ fun RetailerMainScreen(
                         }
                     },
                     label = { Text("Cart", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooBlue,
-                        selectedTextColor = TradigooBlue,
-                        indicatorColor = TradigooBlueBg
-                    )
+                    colors = navColors
                 )
 
                 NavigationBarItem(
@@ -158,11 +157,7 @@ fun RetailerMainScreen(
                     onClick = { selectedTab = RetailerTab.Profile },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
                     label = { Text("Profile", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TradigooBlue,
-                        selectedTextColor = TradigooBlue,
-                        indicatorColor = TradigooBlueBg
-                    )
+                    colors = navColors
                 )
             }
         },
@@ -177,12 +172,21 @@ fun RetailerMainScreen(
                 RetailerTab.Home -> {
                     RetailerHomeScreen(
                         user = uiState.user,
+                        trustScore = uiState.trustScore,
                         products = uiState.products,
+                        orders = uiState.orders,
+                        isLoading = uiState.isLoading,
+                        onRefresh = { viewModel.loadData() },
+                        onCategorySelected = { cat ->
+                            viewModel.selectCategory(cat)
+                            selectedTab = RetailerTab.Discover
+                        },
                         onNavigateToDiscover = { selectedTab = RetailerTab.Discover },
                         onNavigateToOrders = { selectedTab = RetailerTab.Orders },
                         onAddToCart = { product ->
-                            viewModel.addToCart(product)
-                            selectedTab = RetailerTab.Cart
+                            viewModel.addToCart(product) {
+                                selectedTab = RetailerTab.Cart
+                            }
                         }
                     )
                 }
@@ -191,8 +195,14 @@ fun RetailerMainScreen(
                         products = uiState.filteredProducts,
                         selectedCategory = uiState.selectedCategory,
                         searchQuery = uiState.searchQuery,
+                        sortOption = uiState.sortOption,
+                        verifiedOnly = uiState.verifiedOnly,
+                        isLoading = uiState.isLoading,
+                        onRefresh = { viewModel.loadData() },
                         onCategorySelected = { viewModel.selectCategory(it) },
                         onSearchChanged = { viewModel.searchProducts(it) },
+                        onSortChanged = { viewModel.setSortOption(it) },
+                        onVerifiedOnlyChanged = { viewModel.toggleVerifiedOnly(it) },
                         onAddToCart = { product, quantity ->
                             viewModel.addToCart(product, quantity)
                         }
@@ -201,12 +211,19 @@ fun RetailerMainScreen(
                 RetailerTab.Orders -> {
                     RetailerOrdersScreen(
                         orders = uiState.orders,
-                        onExploreMarketplace = { selectedTab = RetailerTab.Discover }
+                        isLoading = uiState.isLoading,
+                        isActionLoading = uiState.isActionLoading,
+                        onRefresh = { viewModel.loadData() },
+                        onExploreMarketplace = { selectedTab = RetailerTab.Discover },
+                        onVerifyOtp = { orderId, code -> viewModel.verifyOrderOtp(orderId, code) },
+                        onConfirmQuality = { orderId -> viewModel.confirmOrderQuality(orderId) },
+                        onRaiseDispute = { orderId, reason, uri -> viewModel.raiseDispute(orderId, reason, uri) }
                     )
                 }
                 RetailerTab.Cart -> {
                     RetailerCartScreen(
                         cartItems = uiState.cartItems,
+                        isActionLoading = uiState.isActionLoading,
                         onUpdateQuantity = { id, qty -> viewModel.updateCartQuantity(id, qty) },
                         onRemoveItem = { id -> viewModel.removeFromCart(id) },
                         onCheckout = {
@@ -220,7 +237,15 @@ fun RetailerMainScreen(
                 RetailerTab.Profile -> {
                     RetailerProfileScreen(
                         user = uiState.user,
-                        onLogout = onLogout
+                        trustScore = uiState.trustScore,
+                        isSavingProfile = uiState.isActionLoading,
+                        onUpdateProfile = { name, phone, businessName, location, gst, addr, pin, done ->
+                            viewModel.updateProfile(name, phone, businessName, location, gst, addr, pin, done)
+                        },
+                        onLogout = {
+                            viewModel.logout()
+                            onLogout()
+                        }
                     )
                 }
             }

@@ -14,27 +14,32 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tradigoo.app.R
 import com.tradigoo.app.ui.components.TradigooGradientButton
+import com.tradigoo.app.ui.components.TradigooOutlineButton
 import com.tradigoo.app.ui.components.TradigooTextField
 import com.tradigoo.app.ui.components.TradigooTopBar
 import com.tradigoo.app.ui.theme.*
 
 @Composable
 fun ForgotPasswordScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: AuthViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     var email by remember { mutableStateOf("") }
-    var submitted by remember { mutableStateOf(false) }
-
     val scrollState = rememberScrollState()
+
+    DisposableEffect(Unit) {
+        onDispose { viewModel.clearResetState() }
+    }
 
     Scaffold(
         topBar = {
@@ -51,13 +56,13 @@ fun ForgotPasswordScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Transparent Official Full Tradigoo Logo (Sharp, proportion-preserved, centered)
             Image(
                 painter = painterResource(id = R.drawable.logo_tradigoo),
                 contentDescription = "Tradigoo",
@@ -87,9 +92,27 @@ fun ForgotPasswordScreen(
                 lineHeight = 20.sp
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            if (submitted) {
+            if (uiState.error != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(StatusErrorBg)
+                        .padding(14.dp)
+                ) {
+                    Text(
+                        text = uiState.error!!,
+                        color = StatusError,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            if (uiState.resetSuccess) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -99,23 +122,33 @@ fun ForgotPasswordScreen(
                 ) {
                     Column {
                         Text(
-                            text = "✅ Link Sent Successfully",
+                            text = "Reset Email Dispatched",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = TradigooEmeraldDark
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "A password recovery email has been dispatched to $email. Please check your inbox and spam folders.",
+                            text = uiState.resetMessage ?: "Please check your inbox and spam folder for the password reset link.",
                             fontSize = 13.sp,
                             color = TradigooEmeraldDark
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                TradigooOutlineButton(
+                    text = "Back to Sign In",
+                    onClick = onNavigateBack
+                )
             } else {
                 TradigooTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {
+                        email = it
+                        viewModel.clearError()
+                    },
                     label = "REGISTERED EMAIL",
                     placeholder = "name@company.com",
                     leadingIcon = Icons.Default.Email,
@@ -126,11 +159,8 @@ fun ForgotPasswordScreen(
 
                 TradigooGradientButton(
                     text = "Send Reset Link",
-                    onClick = {
-                        if (email.isNotBlank()) {
-                            submitted = true
-                        }
-                    }
+                    isLoading = uiState.isLoading,
+                    onClick = { viewModel.resetPassword(email) }
                 )
             }
         }

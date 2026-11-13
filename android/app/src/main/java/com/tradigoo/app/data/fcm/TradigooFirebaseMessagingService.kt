@@ -112,7 +112,7 @@ class TradigooFirebaseMessagingService : FirebaseMessagingService() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
-            .setColor(0xFF2563EB.toInt()) // Tradigoo Royal Blue
+            .setColor(0xFF0F172A.toInt()) // Tradigoo Deep Navy
             .setContentIntent(pendingIntent)
 
         if (channelId == NotificationHelper.CHANNEL_ORDERS_ID) {

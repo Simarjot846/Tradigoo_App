@@ -1,6 +1,7 @@
 package com.tradigoo.app.data.repository
 
 import android.content.Context
+import com.google.gson.Gson
 import com.tradigoo.app.data.api.ApiSupportTicket
 import com.tradigoo.app.data.api.ApiUpdateTicketRequest
 import com.tradigoo.app.data.api.RetrofitClient
@@ -11,6 +12,7 @@ import kotlinx.coroutines.withContext
 class SupportTicketRepository(private val context: Context) {
 
     private val api = RetrofitClient.getApiService(context)
+    private val gson = Gson()
 
     suspend fun getTickets(status: String? = null, assignedTo: String? = null): Resource<List<ApiSupportTicket>> =
         withContext(Dispatchers.IO) {
@@ -19,10 +21,10 @@ class SupportTicketRepository(private val context: Context) {
                 if (response.isSuccessful && response.body() != null) {
                     Resource.Success(response.body()!!)
                 } else {
-                    Resource.Success(emptyList())
+                    Resource.Error(extractErrorMessage(response.errorBody()?.string()) ?: "Failed to load support tickets")
                 }
             } catch (e: Exception) {
-                Resource.Error(e.localizedMessage ?: "Failed to load support tickets")
+                Resource.Error(e.localizedMessage ?: "Failed to load support tickets", e)
             }
         }
 
@@ -32,10 +34,10 @@ class SupportTicketRepository(private val context: Context) {
             if (response.isSuccessful && response.body() != null) {
                 Resource.Success(response.body()!!)
             } else {
-                Resource.Error("Ticket not found")
+                Resource.Error(extractErrorMessage(response.errorBody()?.string()) ?: "Ticket not found")
             }
         } catch (e: Exception) {
-            Resource.Error(e.localizedMessage ?: "Error loading ticket details")
+            Resource.Error(e.localizedMessage ?: "Error loading ticket details", e)
         }
     }
 
@@ -63,10 +65,20 @@ class SupportTicketRepository(private val context: Context) {
             if (response.isSuccessful && response.body() != null) {
                 Resource.Success(response.body()!!)
             } else {
-                Resource.Error("Failed to update ticket")
+                Resource.Error(extractErrorMessage(response.errorBody()?.string()) ?: "Failed to update ticket")
             }
         } catch (e: Exception) {
-            Resource.Error(e.localizedMessage ?: "Error updating ticket")
+            Resource.Error(e.localizedMessage ?: "Error updating ticket", e)
+        }
+    }
+
+    private fun extractErrorMessage(rawBody: String?): String? {
+        if (rawBody.isNullOrBlank()) return null
+        return try {
+            val map = gson.fromJson(rawBody, Map::class.java)
+            (map?.get("error") as? String) ?: (map?.get("message") as? String) ?: rawBody
+        } catch (_: Exception) {
+            rawBody
         }
     }
 }

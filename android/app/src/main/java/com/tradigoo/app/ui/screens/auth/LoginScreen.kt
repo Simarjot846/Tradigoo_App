@@ -21,7 +21,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -56,12 +55,10 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(true) }
     var isGoogleLoading by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
-    // Google Sign-In Activity Launcher for Play Services flow
     val googleLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -72,7 +69,6 @@ fun LoginScreen(
         }
     }
 
-    // Observe global Google Auth Events (from Play Services or OAuth deep links)
     LaunchedEffect(Unit) {
         GoogleAuthHelper.events.collect { event ->
             when (event) {
@@ -88,6 +84,7 @@ fun LoginScreen(
                 }
                 is GoogleAuthEvent.Error -> {
                     isGoogleLoading = false
+                    viewModel.setError(event.message)
                 }
                 is GoogleAuthEvent.Cancelled -> {
                     isGoogleLoading = false
@@ -124,13 +121,13 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Transparent Official Full Tradigoo Logo (Sharp, proportion-preserved, perfectly centered)
             Image(
                 painter = painterResource(id = R.drawable.logo_tradigoo),
                 contentDescription = "Tradigoo",
@@ -162,7 +159,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Error Card
             if (uiState.error != null) {
                 Box(
                     modifier = Modifier
@@ -172,7 +168,7 @@ fun LoginScreen(
                         .padding(14.dp)
                 ) {
                     Text(
-                        text = "⚠️ " + uiState.error!!,
+                        text = uiState.error!!,
                         color = StatusError,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
@@ -181,7 +177,6 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Google Sign In CTA
             GoogleSignInButton(
                 text = "Continue with Google",
                 isLoading = isGoogleLoading,
@@ -200,7 +195,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Divider: or continue with email
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -217,7 +211,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Email input
             TradigooTextField(
                 value = email,
                 onValueChange = {
@@ -232,7 +225,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Password input
             TradigooTextField(
                 value = password,
                 onValueChange = {
@@ -255,96 +247,34 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Remember Me and Forgot Password row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = rememberMe,
-                        onCheckedChange = { rememberMe = it },
-                        colors = CheckboxDefaults.colors(checkedColor = TradigooBlue)
-                    )
-                    Text(
-                        text = "Remember me",
-                        fontSize = 13.sp,
-                        color = TradigooTextSecondary
-                    )
-                }
-
                 Text(
                     text = "Forgot password?",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TradigooBlue,
+                    color = TradigooNavy,
                     modifier = Modifier
                         .clickable { onNavigateToForgotPassword() }
                         .padding(horizontal = 6.dp, vertical = 8.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // Login Button
             TradigooGradientButton(
                 text = "Sign In to Tradigoo",
                 isLoading = uiState.isLoading,
                 onClick = { viewModel.signIn(email, password) }
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Quick Demo Credentials Picker
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "⚡ Quick Demo Logins",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TradigooTextSecondary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                email = "retailer@tradigoo.com"
-                                password = "password123"
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(text = "Retailer", fontSize = 12.sp)
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                email = "wholesaler@tradigoo.com"
-                                password = "password123"
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(text = "Wholesaler", fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Register Navigation
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -359,7 +289,7 @@ fun LoginScreen(
                     text = "Register here",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TradigooBlue,
+                    color = TradigooGoldDark,
                     modifier = Modifier
                         .clickable { onNavigateToRegister() }
                         .padding(horizontal = 6.dp, vertical = 8.dp)

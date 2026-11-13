@@ -11,5 +11,11 @@ data class User(
     val trustScore: Int = 500,
     val totalOrders: Int = 0,
     val successfulOrders: Int = 0,
-    val disputedOrders: Int = 0
+    val disputedOrders: Int = 0,
+    val gstNumber: String? = null,
+    val gstVerified: Boolean = false,
+    val businessType: String? = null,
+    val businessAddress: String? = null,
+    val pinCode: String? = null,
+    val businessDescription: String? = null
 )

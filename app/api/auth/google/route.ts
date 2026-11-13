@@ -10,12 +10,14 @@ export async function POST(request: Request) {
     const { supabase, cookieActions } = await createClientWithCookieCollector();
 
     let user: any = null;
+    let sessionToken: string | null = null;
 
     // 1. Authenticate with accessToken (from Supabase OAuth callback)
     if (accessToken) {
       const { data, error } = await supabase.auth.getUser(accessToken);
       if (!error && data?.user) {
         user = data.user;
+        sessionToken = accessToken;
       }
     }
 
@@ -28,15 +30,15 @@ export async function POST(request: Request) {
         });
         if (!error && data?.user) {
           user = data.user;
+          sessionToken = data.session?.access_token || null;
         }
       } catch (err) {
         console.warn('[Google Auth Route] signInWithIdToken fallback:', err);
       }
     }
 
-    // 3. Fallback: If in demo / mock or direct Google account verified token
+    // 3. Fallback: If direct Google account email/JWT was provided
     if (!user && (bodyEmail || idToken)) {
-      // Decode JWT payload if idToken was provided
       let extractedEmail = bodyEmail;
       let extractedName = name;
       if (idToken && typeof idToken === 'string' && idToken.includes('.')) {
@@ -50,7 +52,6 @@ export async function POST(request: Request) {
 
       if (extractedEmail) {
         const cleanEmail = extractedEmail.toLowerCase().trim();
-        // Check if user exists in auth or profiles
         const { data: existingProfile } = await supabaseAdmin
           .from('profiles')
           .select('*')
@@ -69,7 +70,6 @@ export async function POST(request: Request) {
             },
           };
         } else {
-          // Find or create in auth
           const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }).catch(() => ({ data: { users: [] } }));
           const authUser = users?.find(u => u.email?.toLowerCase() === cleanEmail);
           const userId = authUser?.id || `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -134,7 +134,6 @@ export async function POST(request: Request) {
     let userLocation = user.user_metadata?.location || 'India';
 
     if (profile) {
-      // Existing profile takes precedence unless privileged account
       if (userRole === 'founder' || userRole === 'employee') {
         if (profile.role !== userRole) {
           await supabaseAdmin.from('profiles').update({ role: userRole }).eq('id', user.id);
@@ -146,7 +145,6 @@ export async function POST(request: Request) {
       userBusinessName = profile.business_name || userBusinessName;
       userLocation = profile.location || userLocation;
     } else {
-      // Create profile for this Google user
       const { error: profileCreateErr } = await supabaseAdmin.from('profiles').insert({
         id: user.id,
         email: (user.email || '').toLowerCase(),
@@ -168,16 +166,25 @@ export async function POST(request: Request) {
     const apiUser = {
       id: user.id,
       email: user.email,
+      role: userRole,
       user_metadata: {
         name: userName,
         role: userRole,
         business_name: userBusinessName,
         location: userLocation,
+        phone: profile?.phone || phone || null,
+        trust_score: profile?.trust_score ?? 500,
+        total_orders: profile?.total_orders ?? 0,
+        successful_orders: profile?.successful_orders ?? 0,
+        disputed_orders: profile?.disputed_orders ?? 0,
+        gst_number: profile?.gst_number || null,
+        gst_verified: Boolean(profile?.gst_verified),
       },
     };
 
     const response = NextResponse.json({
       user: apiUser,
+      token: sessionToken,
       message: 'Google authentication successful',
     });
 

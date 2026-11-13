@@ -51,6 +51,11 @@ export async function POST(request: Request) {
         business_name: profile?.business_name || data.user.user_metadata?.business_name || '',
         location: profile?.location || data.user.user_metadata?.location || 'India',
         trust_score: profile?.trust_score ?? 500,
+        total_orders: profile?.total_orders ?? 0,
+        successful_orders: profile?.successful_orders ?? 0,
+        disputed_orders: profile?.disputed_orders ?? 0,
+        gst_number: profile?.gst_number || null,
+        gst_verified: Boolean(profile?.gst_verified),
         phone: profile?.phone || data.user.user_metadata?.phone || '',
       },
     };

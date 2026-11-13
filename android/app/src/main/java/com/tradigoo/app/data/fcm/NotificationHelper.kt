@@ -45,7 +45,7 @@ object NotificationHelper {
             ).apply {
                 description = CHANNEL_ORDERS_DESC
                 enableLights(true)
-                lightColor = 0xFF2563EB.toInt() // Tradigoo Primary Blue
+                lightColor = 0xFF0F172A.toInt() // Tradigoo Deep Navy
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 250, 150, 250)
                 setSound(defaultSoundUri, audioAttributes)
@@ -60,7 +60,7 @@ object NotificationHelper {
             ).apply {
                 description = CHANNEL_MARKETPLACE_DESC
                 enableLights(true)
-                lightColor = 0xFF7C3AED.toInt() // Tradigoo Violet
+                lightColor = 0xFFC9A227.toInt() // Tradigoo Gold
                 enableVibration(true)
                 setShowBadge(true)
             }

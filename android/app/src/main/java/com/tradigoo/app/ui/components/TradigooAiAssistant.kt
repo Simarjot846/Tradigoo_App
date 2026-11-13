@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.tradigoo.app.data.api.ApiChatHistoryItem
 import com.tradigoo.app.data.repository.AiAssistantRepository
 import com.tradigoo.app.domain.model.Resource
 import com.tradigoo.app.domain.model.UserRole
@@ -49,31 +50,58 @@ fun TradigooAiAssistantDialog(
     var isLoading by remember { mutableStateOf(false) }
 
     val initialMessage = if (role == UserRole.WHOLESALER) {
-        "Hello! I am your Tradigoo Trade Assistant. I can help optimize your wholesale product listings, explain settlement workflows, or answer inquiries."
+        "Hello! I am your Tradigoo Trade Assistant. Ask about wholesale MOQs, escrow payout releases, or GST verification."
     } else {
-        "Hello! I am Tradigoo's Sourcing Assistant. Ask me to find products, compare bulk rates, calculate MOQ order values, or explain delivery verification."
+        "Hello! I am Tradigoo's Sourcing Assistant. Ask about bulk sourcing, escrow protection, or 24-hour delivery inspection."
     }
 
     val messages = remember {
         mutableStateListOf(
-            ChatMessage(sender = "Tradigoo AI", text = initialMessage, isUser = false)
+            ChatMessage(sender = "Tradigoo Assistant", text = initialMessage, isUser = false)
         )
     }
 
     val samplePrompts = if (role == UserRole.WHOLESALER) {
         listOf(
-            "How do I set optimal wholesale MOQs?",
-            "Write a description for Grade-A Sharbati Wheat",
+            "How do I set wholesale MOQs?",
+            "How does escrow payout release work?",
             "Explain the 24h inspection workflow",
             "How is my supplier Trust Score calculated?"
         )
     } else {
         listOf(
-            "Find high demand FMCG wholesale products",
             "How does escrow payment protection work?",
-            "What happens during 24-hour delivery inspection?",
+            "What happens during 24h delivery inspection?",
+            "How do I verify delivery with OTP?",
             "How do I report damaged bulk goods?"
         )
+    }
+
+    fun sendMessage(prompt: String) {
+        val clean = prompt.trim()
+        if (clean.isEmpty() || isLoading) return
+
+        val history = messages.drop(1).takeLast(6).map { msg ->
+            ApiChatHistoryItem(
+                role = if (msg.isUser) "user" else "assistant",
+                content = msg.text
+            )
+        }
+
+        messages.add(ChatMessage(sender = "You", text = clean, isUser = true))
+        isLoading = true
+        coroutineScope.launch {
+            when (val result = repository.askAssistant(clean, history)) {
+                is Resource.Success -> {
+                    messages.add(ChatMessage(sender = "Tradigoo Assistant", text = result.data, isUser = false))
+                }
+                is Resource.Error -> {
+                    messages.add(ChatMessage(sender = "Tradigoo Assistant", text = result.message, isUser = false))
+                }
+                else -> {}
+            }
+            isLoading = false
+        }
     }
 
     Dialog(
@@ -83,6 +111,7 @@ fun TradigooAiAssistantDialog(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
+                .imePadding()
                 .padding(16.dp),
             shape = RoundedCornerShape(24.dp),
             color = TradigooSurface,
@@ -93,7 +122,6 @@ fun TradigooAiAssistantDialog(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -110,20 +138,20 @@ fun TradigooAiAssistantDialog(
                             Icon(
                                 imageVector = Icons.Default.AutoAwesome,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = TradigooGoldLight,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "Tradigoo Trade Brain AI",
+                                text = "Tradigoo Trade Assistant",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TradigooTextPrimary
                             )
                             Text(
-                                text = "Powered by Google Gemini 2.5 Flash",
+                                text = "AI Trade & Support Assistant",
                                 fontSize = 12.sp,
                                 color = TradigooTextSecondary
                             )
@@ -137,39 +165,21 @@ fun TradigooAiAssistantDialog(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = TradigooCardBorder)
 
-                // Quick Prompt Chips
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(samplePrompts) { prompt ->
                         Surface(
-                            onClick = {
-                                if (!isLoading) {
-                                    messages.add(ChatMessage(sender = "You", text = prompt, isUser = true))
-                                    isLoading = true
-                                    coroutineScope.launch {
-                                        when (val result = repository.askAssistant(prompt)) {
-                                            is Resource.Success -> {
-                                                messages.add(ChatMessage(sender = "Tradigoo AI", text = result.data, isUser = false))
-                                            }
-                                            is Resource.Error -> {
-                                                messages.add(ChatMessage(sender = "Tradigoo AI", text = result.message, isUser = false))
-                                            }
-                                            else -> {}
-                                        }
-                                        isLoading = false
-                                    }
-                                }
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            color = TradigooBlueBg,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooBlue.copy(alpha = 0.3f))
+                            onClick = { sendMessage(prompt) },
+                            shape = RoundedCornerShape(12.dp),
+                            color = TradigooNavyBg,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooNavy.copy(alpha = 0.2f))
                         ) {
                             Text(
                                 text = prompt,
                                 fontSize = 11.sp,
-                                color = TradigooBlue,
+                                color = TradigooNavy,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
@@ -179,7 +189,6 @@ fun TradigooAiAssistantDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Messages List
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -200,11 +209,11 @@ fun TradigooAiAssistantDialog(
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
-                                    color = TradigooBlue
+                                    color = TradigooNavy
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Analyzing marketplace intelligence...",
+                                    text = "Fetching Tradigoo trade guidance...",
                                     fontSize = 12.sp,
                                     color = TradigooTextSecondary
                                 )
@@ -213,7 +222,6 @@ fun TradigooAiAssistantDialog(
                     }
                 }
 
-                // Input Box
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -223,11 +231,11 @@ fun TradigooAiAssistantDialog(
                     OutlinedTextField(
                         value = inputText,
                         onValueChange = { inputText = it },
-                        placeholder = { Text("Ask about bulk rates, products, or orders...", fontSize = 13.sp) },
+                        placeholder = { Text("Ask about escrow, orders, or products...", fontSize = 13.sp) },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = TradigooBlue,
+                            focusedBorderColor = TradigooNavy,
                             unfocusedBorderColor = TradigooCardBorder
                         ),
                         singleLine = true
@@ -238,28 +246,15 @@ fun TradigooAiAssistantDialog(
                     IconButton(
                         onClick = {
                             val prompt = inputText.trim()
-                            if (prompt.isNotEmpty() && !isLoading) {
-                                messages.add(ChatMessage(sender = "You", text = prompt, isUser = true))
+                            if (prompt.isNotEmpty()) {
                                 inputText = ""
-                                isLoading = true
-                                coroutineScope.launch {
-                                    when (val result = repository.askAssistant(prompt)) {
-                                        is Resource.Success -> {
-                                            messages.add(ChatMessage(sender = "Tradigoo AI", text = result.data, isUser = false))
-                                        }
-                                        is Resource.Error -> {
-                                            messages.add(ChatMessage(sender = "Tradigoo AI", text = result.message, isUser = false))
-                                        }
-                                        else -> {}
-                                    }
-                                    isLoading = false
-                                }
+                                sendMessage(prompt)
                             }
                         },
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(if (inputText.isNotBlank()) TradigooBlue else TradigooCardBorder)
+                            .background(if (inputText.isNotBlank()) TradigooNavy else TradigooCardBorder)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
@@ -276,7 +271,7 @@ fun TradigooAiAssistantDialog(
 @Composable
 private fun ChatBubble(message: ChatMessage) {
     val alignment = if (message.isUser) Alignment.End else Alignment.Start
-    val bg = if (message.isUser) TradigooBlue else TradigooSurfaceElevated
+    val bg = if (message.isUser) TradigooNavy else TradigooSurfaceElevated
     val textColor = if (message.isUser) Color.White else TradigooTextPrimary
 
     Column(
@@ -292,7 +287,7 @@ private fun ChatBubble(message: ChatMessage) {
             ),
             color = bg,
             border = if (!message.isUser) androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder) else null,
-            modifier = Modifier.widthIn(max = 280.dp)
+            modifier = Modifier.widthIn(max = 285.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (!message.isUser) {
@@ -300,7 +295,7 @@ private fun ChatBubble(message: ChatMessage) {
                         text = message.sender,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TradigooBlue
+                        color = TradigooGoldDark
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                 }

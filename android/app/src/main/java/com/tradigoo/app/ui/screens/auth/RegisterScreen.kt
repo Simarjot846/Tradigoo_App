@@ -5,7 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -63,12 +62,11 @@ fun RegisterScreen(
     var isGoogleLoading by remember { mutableStateOf(false) }
 
     val isRetailer = role == UserRole.RETAILER
-    val primaryColor = if (isRetailer) TradigooBlue else TradigooEmerald
-    val gradient = if (isRetailer) TradigooBlueGradient else TradigooEmeraldGradient
+    val primaryColor = if (isRetailer) TradigooNavy else TradigooEmerald
+    val gradient = if (isRetailer) TradigooBrandGradient else TradigooEmeraldGradient
 
     val scrollState = rememberScrollState()
 
-    // Google Sign-In Activity Launcher for Play Services flow
     val googleLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -79,7 +77,6 @@ fun RegisterScreen(
         }
     }
 
-    // Observe global Google Auth Events (from Play Services or OAuth deep links)
     LaunchedEffect(Unit) {
         GoogleAuthHelper.events.collect { event ->
             when (event) {
@@ -88,7 +85,7 @@ fun RegisterScreen(
                     viewModel.signInWithGoogle(
                         idToken = event.idToken,
                         accessToken = event.accessToken,
-                        role = role, // Always enforce the actively selected role on Register screen
+                        role = role,
                         name = event.name ?: name.ifBlank { null },
                         email = event.email ?: email.ifBlank { null },
                         businessName = businessName.ifBlank { null },
@@ -98,6 +95,7 @@ fun RegisterScreen(
                 }
                 is GoogleAuthEvent.Error -> {
                     isGoogleLoading = false
+                    viewModel.setError(event.message)
                 }
                 is GoogleAuthEvent.Cancelled -> {
                     isGoogleLoading = false
@@ -134,13 +132,13 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Transparent Official Full Tradigoo Logo (Sharp, proportion-preserved, perfectly centered)
             Image(
                 painter = painterResource(id = R.drawable.logo_tradigoo),
                 contentDescription = "Tradigoo",
@@ -153,7 +151,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Interactive Role Selection Tabs (Allows user to toggle between Retailer and Wholesaler)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,7 +159,6 @@ fun RegisterScreen(
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // Retailer Tab
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -173,14 +169,13 @@ fun RegisterScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "🏪 Retailer (Buyer)",
+                        text = "Retailer (Buyer)",
                         fontSize = 13.sp,
                         fontWeight = if (isRetailer) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isRetailer) TradigooBlue else TradigooTextSecondary
+                        color = if (isRetailer) TradigooNavy else TradigooTextSecondary
                     )
                 }
 
-                // Wholesaler Tab
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -191,7 +186,7 @@ fun RegisterScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "🏭 Wholesaler (Seller)",
+                        text = "Wholesaler (Seller)",
                         fontSize = 13.sp,
                         fontWeight = if (!isRetailer) FontWeight.Bold else FontWeight.Medium,
                         color = if (!isRetailer) TradigooEmeraldDark else TradigooTextSecondary
@@ -224,7 +219,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Error Box
             if (uiState.error != null) {
                 Box(
                     modifier = Modifier
@@ -234,7 +228,7 @@ fun RegisterScreen(
                         .padding(14.dp)
                 ) {
                     Text(
-                        text = "⚠️ " + uiState.error!!,
+                        text = uiState.error!!,
                         color = StatusError,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
@@ -243,7 +237,6 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Google Registration CTA
             GoogleSignInButton(
                 text = if (isRetailer) "Continue with Google as Retailer" else "Continue with Google as Wholesaler",
                 isLoading = isGoogleLoading,
@@ -261,7 +254,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Divider: or register with email
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -278,10 +270,12 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Full Name
             TradigooTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = {
+                    name = it
+                    viewModel.clearError()
+                },
                 label = if (isRetailer) "FULL NAME" else "OWNER / CONTACT NAME",
                 placeholder = "e.g., Rajesh Sharma",
                 leadingIcon = Icons.Default.Person
@@ -289,10 +283,12 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Business Name
             TradigooTextField(
                 value = businessName,
-                onValueChange = { businessName = it },
+                onValueChange = {
+                    businessName = it
+                    viewModel.clearError()
+                },
                 label = "BUSINESS NAME",
                 placeholder = if (isRetailer) "e.g., Sharma Kirana Store" else "e.g., Bharat Agro Processing Ltd",
                 leadingIcon = Icons.Default.Business
@@ -300,10 +296,12 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Business Email
             TradigooTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    viewModel.clearError()
+                },
                 label = "BUSINESS EMAIL",
                 placeholder = "rajesh@store.com",
                 leadingIcon = Icons.Default.Email,
@@ -312,7 +310,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Phone
             TradigooTextField(
                 value = phone,
                 onValueChange = { phone = it },
@@ -324,7 +321,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Location
             TradigooTextField(
                 value = location,
                 onValueChange = { location = it },
@@ -336,10 +332,9 @@ fun RegisterScreen(
             if (!isRetailer) {
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // GSTIN for Wholesaler
                 TradigooTextField(
                     value = gstin,
-                    onValueChange = { gstin = it },
+                    onValueChange = { gstin = it.uppercase() },
                     label = "GSTIN (OPTIONAL FOR PRE-VERIFICATION)",
                     placeholder = "27AAAAA0000A1Z5",
                     leadingIcon = Icons.Default.Verified
@@ -348,10 +343,12 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Password
             TradigooTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    viewModel.clearError()
+                },
                 label = "PASSWORD (MIN. 6 CHARACTERS)",
                 placeholder = "Create a secure password",
                 leadingIcon = Icons.Default.Lock,
@@ -370,7 +367,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Register CTA Button
             TradigooGradientButton(
                 text = if (isRetailer) "Create Retailer Account" else "Create Wholesaler Account",
                 gradient = gradient,
@@ -383,14 +379,14 @@ fun RegisterScreen(
                         role = role,
                         businessName = businessName,
                         phone = phone,
-                        location = location.ifEmpty { "India" }
+                        location = location.ifEmpty { "India" },
+                        gstin = gstin.takeIf { !isRetailer && it.isNotBlank() }
                     )
                 }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Login Navigation
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,

@@ -38,8 +38,8 @@ fun RoleCard(
 ) {
     val isRetailer = role == UserRole.RETAILER
 
-    val primaryColor = if (isRetailer) TradigooBlue else TradigooEmerald
-    val lightBgColor = if (isRetailer) TradigooBlueBg else TradigooEmeraldBg
+    val primaryColor = if (isRetailer) TradigooNavy else TradigooEmerald
+    val lightBgColor = if (isRetailer) TradigooNavyBg else TradigooEmeraldBg
 
     val borderColor by animateColorAsState(
         targetValue = if (isSelected) primaryColor else TradigooCardBorder,
