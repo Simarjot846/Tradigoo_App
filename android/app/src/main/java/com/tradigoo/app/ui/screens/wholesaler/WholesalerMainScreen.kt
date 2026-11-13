@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,6 +41,7 @@ fun WholesalerMainScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             Column {
@@ -61,7 +63,9 @@ fun WholesalerMainScreen(
                                 text = "ADMIN PREVIEW MODE (FOUNDER)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TradigooNavy
+                                color = TradigooNavy,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             if (onExitPreview != null) {
                                 TextButton(onClick = onExitPreview) {
@@ -80,7 +84,8 @@ fun WholesalerMainScreen(
                 TradigooTopBar(
                     userRole = UserRole.WHOLESALER,
                     userInitials = uiState.user?.name ?: "WP",
-                    onProfileClick = { selectedTab = WholesalerTab.Profile }
+                    onProfileClick = { selectedTab = WholesalerTab.Profile },
+                    applyStatusBarInsets = !isPreview
                 )
             }
         },
@@ -90,63 +95,81 @@ fun WholesalerMainScreen(
                 containerColor = TradigooNavy,
                 contentColor = TradigooGoldLight,
                 shape = CircleShape,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.size(50.dp)
             ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = "Tradigoo Trade Assistant")
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "Tradigoo Trade Assistant",
+                    modifier = Modifier.size(22.dp)
+                )
             }
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = TradigooSurface,
-                tonalElevation = 8.dp
-            ) {
-                val navColors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = TradigooNavy,
-                    selectedTextColor = TradigooNavy,
-                    indicatorColor = TradigooGoldBg,
-                    unselectedIconColor = TradigooTextTertiary,
-                    unselectedTextColor = TradigooTextTertiary
-                )
+            Column {
+                HorizontalDivider(color = TradigooCardBorder, thickness = 1.dp)
+                NavigationBar(
+                    containerColor = TradigooSurface,
+                    tonalElevation = 0.dp,
+                    windowInsets = NavigationBarDefaults.windowInsets
+                ) {
+                    val navColors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = TradigooNavy,
+                        selectedTextColor = TradigooNavy,
+                        indicatorColor = TradigooGoldBg,
+                        unselectedIconColor = TradigooTextTertiary,
+                        unselectedTextColor = TradigooTextTertiary
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == WholesalerTab.Home,
-                    onClick = { selectedTab = WholesalerTab.Home },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text("Home", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == WholesalerTab.Home,
+                        onClick = { selectedTab = WholesalerTab.Home },
+                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Home") },
+                        label = {
+                            Text("Home", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == WholesalerTab.Inventory,
-                    onClick = { selectedTab = WholesalerTab.Inventory },
-                    icon = { Icon(Icons.Default.Inventory2, contentDescription = "Inventory") },
-                    label = { Text("Inventory", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == WholesalerTab.Inventory,
+                        onClick = { selectedTab = WholesalerTab.Inventory },
+                        icon = { Icon(Icons.Default.Inventory2, contentDescription = "Inventory") },
+                        label = {
+                            Text("Inventory", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == WholesalerTab.AddProduct,
-                    onClick = { selectedTab = WholesalerTab.AddProduct },
-                    icon = { Icon(Icons.Default.AddCircle, contentDescription = "Add Product") },
-                    label = { Text("Add SKU", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == WholesalerTab.AddProduct,
+                        onClick = { selectedTab = WholesalerTab.AddProduct },
+                        icon = { Icon(Icons.Default.AddCircle, contentDescription = "Add SKU") },
+                        label = {
+                            Text("Add SKU", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == WholesalerTab.Orders,
-                    onClick = { selectedTab = WholesalerTab.Orders },
-                    icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Orders") },
-                    label = { Text("Orders", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == WholesalerTab.Orders,
+                        onClick = { selectedTab = WholesalerTab.Orders },
+                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Orders") },
+                        label = {
+                            Text("Orders", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == WholesalerTab.Profile,
-                    onClick = { selectedTab = WholesalerTab.Profile },
-                    icon = { Icon(Icons.Default.Business, contentDescription = "Business") },
-                    label = { Text("Business", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == WholesalerTab.Profile,
+                        onClick = { selectedTab = WholesalerTab.Profile },
+                        icon = { Icon(Icons.Default.Business, contentDescription = "Business") },
+                        label = {
+                            Text("Business", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
+                }
             }
         },
         containerColor = TradigooBackground

@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tradigoo.app.data.api.ApiTrustScoreResponse
@@ -154,33 +155,39 @@ fun RetailerHomeScreen(
                             .background(Color.Black.copy(alpha = 0.25f))
                             .clickable { onNavigateToOrders() }
                             .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column {
-                            Text(text = "Active Escrow", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Active Escrow", fontSize = 10.5.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 text = "$activeEscrowOrders Orders",
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Column {
-                            Text(text = "Completed", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Completed", fontSize = 10.5.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 text = "$completedOrdersCount",
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TradigooEmeraldLight
+                                color = TradigooEmeraldLight,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Column {
-                            Text(text = "Disputes", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Disputes", fontSize = 10.5.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 text = "$disputedOrdersCount",
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (disputedOrdersCount > 0) Color(0xFFFCA5A5) else Color.White
+                                color = if (disputedOrdersCount > 0) Color(0xFFFCA5A5) else Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -386,18 +393,22 @@ fun RetailerHomeScreen(
                                 }
                             }
 
+                            Spacer(modifier = Modifier.width(8.dp))
+
                             Button(
                                 onClick = { onAddToCart(product) },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) {
-                                Text(text = "Source", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Source", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                             }
                         }
                     }
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(88.dp))
     }
 }

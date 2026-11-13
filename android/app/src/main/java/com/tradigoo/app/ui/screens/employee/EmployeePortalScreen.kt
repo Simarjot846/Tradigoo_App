@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExitToApp
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tradigoo.app.data.api.ApiSupportTicket
@@ -92,20 +95,26 @@ fun EmployeePortalScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets.statusBars,
                 title = {
                     Column {
                         Text(
                             text = "Tradigoo Operations Hub",
-                            fontSize = 18.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TradigooTextPrimary
+                            color = TradigooTextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "Operations • ${currentUser?.email ?: "Support Team"}",
-                            fontSize = 12.sp,
-                            color = TradigooNavy
+                            fontSize = 11.5.sp,
+                            color = TradigooNavy,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
@@ -131,7 +140,8 @@ fun EmployeePortalScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -215,7 +225,10 @@ fun EmployeePortalScreen(
                     }
                 }
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     items(filteredTickets, key = { it.id }) { ticket ->
                         TicketCard(
                             ticket = ticket,
@@ -248,7 +261,7 @@ fun EmployeePortalScreen(
                 }
             },
             text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                     Text(text = ticket.subject, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TradigooTextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Customer: ${ticket.customerName} (${ticket.customerEmail})", fontSize = 12.sp, color = TradigooTextSecondary)
@@ -287,24 +300,26 @@ fun EmployeePortalScreen(
                 }
             },
             confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Button(
                         onClick = {
                             actionType = "NOTE"
                             showActionDialog = true
                         },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
                     ) {
-                        Text("Note", fontSize = 12.sp)
+                        Text("Note", fontSize = 12.sp, maxLines = 1, softWrap = false)
                     }
                     Button(
                         onClick = {
                             actionType = "REPLY"
                             showActionDialog = true
                         },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = TradigooEmeraldDark)
                     ) {
-                        Text("Reply", fontSize = 12.sp)
+                        Text("Reply", fontSize = 12.sp, maxLines = 1, softWrap = false)
                     }
                     Button(
                         onClick = {
@@ -312,9 +327,10 @@ fun EmployeePortalScreen(
                             newStatusChoice = ticket.status
                             showActionDialog = true
                         },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = TradigooGoldDark)
                     ) {
-                        Text("Status", fontSize = 12.sp)
+                        Text("Status", fontSize = 12.sp, maxLines = 1, softWrap = false)
                     }
                 }
             },
@@ -342,7 +358,7 @@ fun EmployeePortalScreen(
                 )
             },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     when (actionType) {
                         "NOTE" -> {
                             OutlinedTextField(
@@ -518,8 +534,8 @@ private fun MetricChip(label: String, count: Int, color: Color, modifier: Modifi
                 .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = count.toString(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color)
-            Text(text = label, fontSize = 10.sp, color = TradigooTextSecondary)
+            Text(text = count.toString(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+            Text(text = label, fontSize = 10.sp, color = TradigooTextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.tradigoo.app.ui.screens.retailer
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -10,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -42,13 +44,14 @@ fun RetailerMainScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             Column {
                 if (isPreview) {
                     Surface(
                         color = TradigooGoldBg,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, TradigooGold.copy(alpha = 0.4f)),
+                        border = BorderStroke(1.dp, TradigooGold.copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -60,10 +63,12 @@ fun RetailerMainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "ADMINISTRATIVE PREVIEW MODE (FOUNDER)",
+                                text = "ADMIN PREVIEW MODE (FOUNDER)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TradigooNavy
+                                color = TradigooNavy,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             if (onExitPreview != null) {
                                 TextButton(onClick = onExitPreview) {
@@ -79,7 +84,8 @@ fun RetailerMainScreen(
                     cartCount = cartCount,
                     onCartClick = { selectedTab = RetailerTab.Cart },
                     userInitials = uiState.user?.name ?: "RP",
-                    onProfileClick = { selectedTab = RetailerTab.Profile }
+                    onProfileClick = { selectedTab = RetailerTab.Profile },
+                    applyStatusBarInsets = !isPreview
                 )
             }
         },
@@ -89,76 +95,96 @@ fun RetailerMainScreen(
                 containerColor = TradigooNavy,
                 contentColor = TradigooGoldLight,
                 shape = CircleShape,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.size(50.dp)
             ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = "Tradigoo Assistant")
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "Tradigoo Trade Assistant",
+                    modifier = Modifier.size(22.dp)
+                )
             }
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = TradigooSurface,
-                tonalElevation = 8.dp
-            ) {
-                val navColors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = TradigooNavy,
-                    selectedTextColor = TradigooNavy,
-                    indicatorColor = TradigooGoldBg
-                )
+            Column {
+                HorizontalDivider(color = TradigooCardBorder, thickness = 1.dp)
+                NavigationBar(
+                    containerColor = TradigooSurface,
+                    tonalElevation = 0.dp,
+                    windowInsets = NavigationBarDefaults.windowInsets
+                ) {
+                    val navColors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = TradigooNavy,
+                        selectedTextColor = TradigooNavy,
+                        indicatorColor = TradigooGoldBg,
+                        unselectedIconColor = TradigooTextTertiary,
+                        unselectedTextColor = TradigooTextTertiary
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == RetailerTab.Home,
-                    onClick = { selectedTab = RetailerTab.Home },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == RetailerTab.Home,
+                        onClick = { selectedTab = RetailerTab.Home },
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                        label = {
+                            Text("Home", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == RetailerTab.Discover,
-                    onClick = { selectedTab = RetailerTab.Discover },
-                    icon = { Icon(Icons.Default.Storefront, contentDescription = "Market") },
-                    label = { Text("Market", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == RetailerTab.Discover,
+                        onClick = { selectedTab = RetailerTab.Discover },
+                        icon = { Icon(Icons.Default.Storefront, contentDescription = "Market") },
+                        label = {
+                            Text("Market", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == RetailerTab.Orders,
-                    onClick = { selectedTab = RetailerTab.Orders },
-                    icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Orders") },
-                    label = { Text("Orders", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == RetailerTab.Orders,
+                        onClick = { selectedTab = RetailerTab.Orders },
+                        icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Orders") },
+                        label = {
+                            Text("Orders", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == RetailerTab.Cart,
-                    onClick = { selectedTab = RetailerTab.Cart },
-                    icon = {
-                        BadgedBox(
-                            badge = {
-                                if (cartCount > 0) {
-                                    Badge(
-                                        containerColor = TradigooGoldDark,
-                                        contentColor = Color.White
-                                    ) {
-                                        Text(text = cartCount.toString())
+                    NavigationBarItem(
+                        selected = selectedTab == RetailerTab.Cart,
+                        onClick = { selectedTab = RetailerTab.Cart },
+                        icon = {
+                            BadgedBox(
+                                badge = {
+                                    if (cartCount > 0) {
+                                        Badge(
+                                            containerColor = TradigooGoldDark,
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(text = if (cartCount > 99) "99+" else cartCount.toString())
+                                        }
                                     }
                                 }
+                            ) {
+                                Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                             }
-                        ) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
-                        }
-                    },
-                    label = { Text("Cart", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                        },
+                        label = {
+                            Text("Cart", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
 
-                NavigationBarItem(
-                    selected = selectedTab == RetailerTab.Profile,
-                    onClick = { selectedTab = RetailerTab.Profile },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Profile", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = navColors
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == RetailerTab.Profile,
+                        onClick = { selectedTab = RetailerTab.Profile },
+                        icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                        label = {
+                            Text("Profile", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                        },
+                        colors = navColors
+                    )
+                }
             }
         },
         containerColor = TradigooBackground

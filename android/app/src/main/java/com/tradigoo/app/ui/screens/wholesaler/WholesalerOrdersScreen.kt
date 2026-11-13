@@ -35,17 +35,18 @@ fun WholesalerOrdersScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(TradigooBackground)
-            .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 12.dp, top = 14.dp, bottom = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Received Purchase Orders",
-                    fontSize = 20.sp,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = TradigooTextPrimary
                 )
@@ -60,8 +61,6 @@ fun WholesalerOrdersScreen(
                 Icon(Icons.Default.Refresh, contentDescription = "Refresh orders", tint = TradigooNavy)
             }
         }
-
-        Spacer(modifier = Modifier.height(14.dp))
 
         if (orders.isEmpty()) {
             Box(
@@ -95,6 +94,7 @@ fun WholesalerOrdersScreen(
             }
         } else {
             LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 92.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize()
             ) {

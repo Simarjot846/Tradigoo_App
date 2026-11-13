@@ -1,28 +1,32 @@
 package com.tradigoo.app.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloseFullscreen
+import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.tradigoo.app.data.api.ApiChatHistoryItem
 import com.tradigoo.app.data.repository.AiAssistantRepository
 import com.tradigoo.app.domain.model.Resource
@@ -37,17 +41,21 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TradigooAiAssistantDialog(
     role: UserRole,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val repository = remember { AiAssistantRepository(context) }
     val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
     var inputText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(false) }
 
     val initialMessage = if (role == UserRole.WHOLESALER) {
         "Hello! I am your Tradigoo Trade Assistant. Ask about wholesale MOQs, escrow payout releases, or GST verification."
@@ -65,16 +73,22 @@ fun TradigooAiAssistantDialog(
         listOf(
             "How do I set wholesale MOQs?",
             "How does escrow payout release work?",
-            "Explain the 24h inspection workflow",
-            "How is my supplier Trust Score calculated?"
+            "Explain 24h inspection",
+            "How is Trust Score calculated?"
         )
     } else {
         listOf(
-            "How does escrow payment protection work?",
-            "What happens during 24h delivery inspection?",
-            "How do I verify delivery with OTP?",
-            "How do I report damaged bulk goods?"
+            "How does escrow protection work?",
+            "What is 24h delivery inspection?",
+            "How do I verify delivery OTP?",
+            "How to report damaged goods?"
         )
+    }
+
+    LaunchedEffect(messages.size, isLoading) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
     }
 
     fun sendMessage(prompt: String) {
@@ -104,163 +118,231 @@ fun TradigooAiAssistantDialog(
         }
     }
 
-    Dialog(
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val screenHeight = configuration.screenHeightDp.dp
+    val targetSheetHeight = (screenHeight * if (isExpanded) 0.92f else 0.75f).coerceAtLeast(360.dp)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-                .padding(16.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = TradigooSurface,
-            tonalElevation = 12.dp
-        ) {
-            Column(
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = TradigooSurface,
+        contentColor = TradigooTextPrimary,
+        dragHandle = {
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(top = 10.dp, bottom = 4.dp)
+                    .width(40.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(TradigooCardBorder)
+            )
+        },
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(targetSheetHeight)
+                .navigationBarsPadding()
+                .imePadding()
+        ) {
+            // Compact Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(TradigooBrandGradient),
-                            contentAlignment = Alignment.Center
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(TradigooBrandGradient),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = TradigooGoldLight,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Tradigoo Trade Assistant",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TradigooTextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "B2B Trade & Support Assistant",
+                            fontSize = 11.5.sp,
+                            color = TradigooTextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.CloseFullscreen else Icons.Default.OpenInFull,
+                            contentDescription = if (isExpanded) "Compact view" else "Expand full height",
+                            tint = TradigooTextSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close assistant",
+                            tint = TradigooTextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = TradigooCardBorder)
+
+            // Horizontally Scrollable Suggested Prompts
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(samplePrompts) { prompt ->
+                    Surface(
+                        onClick = { sendMessage(prompt) },
+                        shape = RoundedCornerShape(10.dp),
+                        color = TradigooNavyBg,
+                        border = BorderStroke(1.dp, TradigooNavy.copy(alpha = 0.18f))
+                    ) {
+                        Text(
+                            text = prompt,
+                            fontSize = 11.5.sp,
+                            color = TradigooNavy,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            // Independently Scrollable Chat Thread
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(messages) { msg ->
+                    ChatBubble(message = msg)
+                }
+
+                if (isLoading) {
+                    item {
+                        Row(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                tint = TradigooGoldLight,
-                                modifier = Modifier.size(20.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = TradigooNavy
                             )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Tradigoo Trade Assistant",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TradigooTextPrimary
-                            )
-                            Text(
-                                text = "AI Trade & Support Assistant",
+                                text = "Fetching Tradigoo trade guidance...",
                                 fontSize = 12.sp,
                                 color = TradigooTextSecondary
                             )
                         }
                     }
-
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TradigooTextSecondary)
-                    }
                 }
+            }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = TradigooCardBorder)
+            // Bottom Input Composer (Always visible above keyboard & nav bar)
+            Surface(
+                color = TradigooSurface,
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    HorizontalDivider(color = TradigooCardBorder)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            placeholder = {
+                                Text(
+                                    text = "Ask about escrow, orders, or products...",
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = TradigooNavy,
+                                unfocusedBorderColor = TradigooCardBorder,
+                                focusedContainerColor = TradigooBackground,
+                                unfocusedContainerColor = TradigooBackground
+                            ),
+                            maxLines = 3
+                        )
 
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(samplePrompts) { prompt ->
-                        Surface(
-                            onClick = { sendMessage(prompt) },
-                            shape = RoundedCornerShape(12.dp),
-                            color = TradigooNavyBg,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooNavy.copy(alpha = 0.2f))
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(
+                            enabled = inputText.isNotBlank() && !isLoading,
+                            onClick = {
+                                val prompt = inputText.trim()
+                                if (prompt.isNotEmpty()) {
+                                    inputText = ""
+                                    sendMessage(prompt)
+                                }
+                            },
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (inputText.isNotBlank() && !isLoading) TradigooNavy else TradigooCardBorder
+                                )
                         ) {
-                            Text(
-                                text = prompt,
-                                fontSize = 11.sp,
-                                color = TradigooNavy,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = if (inputText.isNotBlank() && !isLoading) TradigooGoldLight else Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    reverseLayout = false
-                ) {
-                    items(messages) { msg ->
-                        ChatBubble(message = msg)
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
-
-                    if (isLoading) {
-                        item {
-                            Row(
-                                modifier = Modifier.padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = TradigooNavy
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Fetching Tradigoo trade guidance...",
-                                    fontSize = 12.sp,
-                                    color = TradigooTextSecondary
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        placeholder = { Text("Ask about escrow, orders, or products...", fontSize = 13.sp) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = TradigooNavy,
-                            unfocusedBorderColor = TradigooCardBorder
-                        ),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = {
-                            val prompt = inputText.trim()
-                            if (prompt.isNotEmpty()) {
-                                inputText = ""
-                                sendMessage(prompt)
-                            }
-                        },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(if (inputText.isNotBlank()) TradigooNavy else TradigooCardBorder)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = Color.White
-                        )
                     }
                 }
             }
@@ -286,8 +368,8 @@ private fun ChatBubble(message: ChatMessage) {
                 bottomEnd = if (message.isUser) 4.dp else 16.dp
             ),
             color = bg,
-            border = if (!message.isUser) androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder) else null,
-            modifier = Modifier.widthIn(max = 285.dp)
+            border = if (!message.isUser) BorderStroke(1.dp, TradigooCardBorder) else null,
+            modifier = Modifier.widthIn(max = 300.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (!message.isUser) {

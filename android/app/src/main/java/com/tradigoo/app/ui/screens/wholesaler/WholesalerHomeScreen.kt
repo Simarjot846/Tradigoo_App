@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tradigoo.app.data.api.ApiTrustScoreResponse
@@ -164,33 +165,39 @@ fun WholesalerHomeScreen(
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color.White.copy(alpha = 0.08f))
                             .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column {
-                            Text(text = "Order Volume", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Order Volume", fontSize = 10.5.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 text = formatInr(totalRevenue),
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Column {
-                            Text(text = "To Dispatch", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "To Dispatch", fontSize = 10.5.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 text = "$pendingShipments Orders",
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TradigooGoldLight
+                                color = TradigooGoldLight,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Column {
-                            Text(text = "Active SKUs", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Active SKUs", fontSize = 10.5.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 text = "$activeSkuCount / ${inventory.size}",
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -262,20 +269,22 @@ fun WholesalerHomeScreen(
                         onClick = onNavigateToAddProduct,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("List Product", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("List Product", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                     }
 
                     OutlinedButton(
                         onClick = onNavigateToOrders,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                         border = BorderStroke(1.dp, TradigooNavy.copy(alpha = 0.25f))
                     ) {
-                        Text("View Orders (${orders.size})", fontSize = 12.sp, color = TradigooNavy)
+                        Text("Orders (${orders.size})", fontSize = 12.sp, color = TradigooNavy, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -393,5 +402,7 @@ fun WholesalerHomeScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(88.dp))
     }
 }

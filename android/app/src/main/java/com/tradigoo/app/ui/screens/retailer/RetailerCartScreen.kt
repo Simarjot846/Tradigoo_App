@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tradigoo.app.domain.model.CartItem
@@ -40,21 +42,20 @@ fun RetailerCartScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(TradigooBackground)
-            .padding(16.dp)
     ) {
-        Text(
-            text = "Wholesale Purchase Cart",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = TradigooTextPrimary
-        )
-        Text(
-            text = "${cartItems.size} item${if (cartItems.size == 1) "" else "s"} staged for escrow checkout",
-            fontSize = 13.sp,
-            color = TradigooTextSecondary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)) {
+            Text(
+                text = "Wholesale Purchase Cart",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TradigooTextPrimary
+            )
+            Text(
+                text = "${cartItems.size} item${if (cartItems.size == 1) "" else "s"} staged for escrow checkout",
+                fontSize = 13.sp,
+                color = TradigooTextSecondary
+            )
+        }
 
         if (cartItems.isEmpty()) {
             Box(
@@ -81,7 +82,8 @@ fun RetailerCartScreen(
                     Text(
                         text = "Browse wholesale products from verified suppliers across India.",
                         fontSize = 13.sp,
-                        color = TradigooTextSecondary
+                        color = TradigooTextSecondary,
+                        textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
@@ -94,7 +96,10 @@ fun RetailerCartScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 92.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(cartItems, key = { it.id }) { item ->
@@ -123,17 +128,21 @@ fun RetailerCartScreen(
                                         text = item.productName,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = TradigooTextPrimary
+                                        color = TradigooTextPrimary,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = "${item.category} • $gstRate% GST • MOQ $moq",
                                         fontSize = 11.5.sp,
-                                        color = TradigooTextSecondary
+                                        color = TradigooTextSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                                 IconButton(
                                     onClick = { onRemoveItem(item.id) },
-                                    modifier = Modifier.size(30.dp)
+                                    modifier = Modifier.size(32.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
@@ -151,11 +160,24 @@ fun RetailerCartScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "${formatInr(item.basePrice)}/${item.unit}",
-                                    fontSize = 13.sp,
-                                    color = TradigooTextSecondary
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "${formatInr(item.basePrice)}/${item.unit}",
+                                        fontSize = 12.sp,
+                                        color = TradigooTextSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = formatInr(item.totalPrice),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TradigooNavy,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -181,10 +203,11 @@ fun RetailerCartScreen(
 
                                     Text(
                                         text = "${item.quantity} ${item.unit}",
-                                        fontSize = 13.sp,
+                                        fontSize = 12.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = TradigooTextPrimary,
-                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(horizontal = 6.dp)
                                     )
 
                                     TextButton(
@@ -195,104 +218,95 @@ fun RetailerCartScreen(
                                         Text("+", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TradigooTextPrimary)
                                     }
                                 }
-
-                                Text(
-                                    text = formatInr(item.totalPrice),
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TradigooNavy
-                                )
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(14.dp))
+                item(key = "checkout_summary_footer") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = TradigooSurface),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(text = "Subtotal", fontSize = 13.sp, color = TradigooTextSecondary)
+                                    Text(text = formatInr(totals.subtotal), fontSize = 13.sp, color = TradigooTextPrimary, fontWeight = FontWeight.Medium)
+                                }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = TradigooSurface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, TradigooCardBorder)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "Subtotal", fontSize = 13.sp, color = TradigooTextSecondary)
-                        Text(text = formatInr(totals.subtotal), fontSize = 13.sp, color = TradigooTextPrimary, fontWeight = FontWeight.Medium)
-                    }
+                                Spacer(modifier = Modifier.height(6.dp))
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(text = "GST (Category Slabs)", fontSize = 13.sp, color = TradigooTextSecondary)
+                                    Text(text = formatInr(totals.gstTotal), fontSize = 13.sp, color = TradigooTextPrimary, fontWeight = FontWeight.Medium)
+                                }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "GST (Category Slabs)", fontSize = 13.sp, color = TradigooTextSecondary)
-                        Text(text = formatInr(totals.gstTotal), fontSize = 13.sp, color = TradigooTextPrimary, fontWeight = FontWeight.Medium)
-                    }
+                                Spacer(modifier = Modifier.height(6.dp))
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(text = "Buyer Platform Fee", fontSize = 13.sp, color = TradigooTextSecondary)
+                                    Text(text = "FREE (₹0)", fontSize = 13.sp, color = TradigooEmerald, fontWeight = FontWeight.Bold)
+                                }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "Buyer Platform Fee", fontSize = 13.sp, color = TradigooTextSecondary)
-                        Text(text = "FREE (₹0)", fontSize = 13.sp, color = TradigooEmerald, fontWeight = FontWeight.Bold)
-                    }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                HorizontalDivider(color = TradigooCardBorder)
+                                Spacer(modifier = Modifier.height(10.dp))
 
-                    Spacer(modifier = Modifier.height(10.dp))
-                    HorizontalDivider(color = TradigooCardBorder)
-                    Spacer(modifier = Modifier.height(10.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = "Total Payable (Escrow)", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = TradigooTextPrimary)
+                                    Text(text = formatInr(totals.grandTotal), fontSize = 19.sp, fontWeight = FontWeight.Black, color = TradigooNavy)
+                                }
+                            }
+                        }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(text = "Total Payable (Escrow)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TradigooTextPrimary)
-                        Text(text = formatInr(totals.grandTotal), fontSize = 20.sp, fontWeight = FontWeight.Black, color = TradigooNavy)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(TradigooEmeraldBg)
+                                .padding(12.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Shield,
+                                    contentDescription = null,
+                                    tint = TradigooEmerald,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "100% Escrow Protection: Funds released to wholesaler only after OTP delivery confirmation and 24-hour inspection.",
+                                    fontSize = 11.5.sp,
+                                    color = TradigooEmeraldDark,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+
+                        TradigooGradientButton(
+                            text = "Place Escrow Order (${formatInr(totals.grandTotal)})",
+                            isLoading = isActionLoading,
+                            onClick = onCheckout
+                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(TradigooEmeraldBg)
-                    .padding(12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Shield,
-                        contentDescription = null,
-                        tint = TradigooEmerald,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "100% Escrow Protection: Funds released to wholesaler only after OTP delivery confirmation and 24-hour inspection.",
-                        fontSize = 11.5.sp,
-                        color = TradigooEmeraldDark,
-                        lineHeight = 16.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            TradigooGradientButton(
-                text = "Place Escrow Order (${formatInr(totals.grandTotal)})",
-                isLoading = isActionLoading,
-                onClick = onCheckout
-            )
         }
     }
 }

@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tradigoo.app.BuildConfig
@@ -72,18 +74,23 @@ fun FounderDashboardScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets.statusBars,
                 title = {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "Tradigoo Founder Console",
-                                fontSize = 18.sp,
+                                fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TradigooTextPrimary
+                                color = TradigooTextPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
@@ -95,14 +102,18 @@ fun FounderDashboardScreen(
                                     text = "FOUNDER",
                                     color = TradigooNavy,
                                     fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
                         Text(
                             text = "${currentUser?.email ?: "Founder"} • Platform Oversight",
                             fontSize = 11.sp,
-                            color = TradigooTextSecondary
+                            color = TradigooTextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
@@ -128,7 +139,8 @@ fun FounderDashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .navigationBarsPadding(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
@@ -156,27 +168,30 @@ fun FounderDashboardScreen(
                             color = TradigooTextSecondary
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Button(
                                 onClick = onPreviewRetailer,
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Retailer", fontSize = 12.sp)
+                                Text("Retailer", fontSize = 11.5.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                             }
                             Button(
                                 onClick = onPreviewWholesaler,
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = TradigooEmeraldDark),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Wholesaler", fontSize = 12.sp)
+                                Text("Wholesaler", fontSize = 11.5.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                             }
                             Button(
                                 onClick = onOpenEmployeePortal,
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = TradigooGoldDark),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Ops Portal", fontSize = 12.sp)
+                                Text("Ops Portal", fontSize = 11.5.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -374,6 +389,16 @@ private fun AuditLogRow(label: String, value: String) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = label, fontSize = 12.sp, color = TradigooTextSecondary)
-        Text(text = value, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TradigooTextPrimary)
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = value,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TradigooTextPrimary,
+            textAlign = TextAlign.End,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
     }
 }

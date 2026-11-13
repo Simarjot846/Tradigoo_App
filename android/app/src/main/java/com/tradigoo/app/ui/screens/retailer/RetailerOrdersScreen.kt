@@ -7,8 +7,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tradigoo.app.domain.model.Order
@@ -55,14 +58,15 @@ fun RetailerOrdersScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(TradigooBackground)
-            .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 12.dp, top = 14.dp, bottom = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "My Wholesale Orders",
                     fontSize = 20.sp,
@@ -79,8 +83,6 @@ fun RetailerOrdersScreen(
                 Icon(Icons.Default.Refresh, contentDescription = "Refresh orders", tint = TradigooNavy)
             }
         }
-
-        Spacer(modifier = Modifier.height(14.dp))
 
         if (isLoading && orders.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -124,6 +126,7 @@ fun RetailerOrdersScreen(
             }
         } else {
             LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 92.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -262,9 +265,10 @@ fun RetailerOrdersScreen(
                                             },
                                             modifier = Modifier.weight(1f),
                                             shape = RoundedCornerShape(10.dp),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = TradigooNavy)
                                         ) {
-                                            Text("Verify Delivery OTP", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text("Verify OTP", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                                         }
                                         OutlinedButton(
                                             enabled = !isActionLoading,
@@ -273,9 +277,10 @@ fun RetailerOrdersScreen(
                                                 selectedEvidenceUri = null
                                                 disputeTargetOrder = order
                                             },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                                             shape = RoundedCornerShape(10.dp)
                                         ) {
-                                            Text("Dispute", fontSize = 12.sp, color = StatusError)
+                                            Text("Dispute", fontSize = 12.sp, color = StatusError, maxLines = 1, softWrap = false)
                                         }
                                     }
                                 }
@@ -300,9 +305,10 @@ fun RetailerOrdersScreen(
                                             onClick = { onConfirmQuality(order.id) },
                                             modifier = Modifier.weight(1f),
                                             shape = RoundedCornerShape(10.dp),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = TradigooEmerald)
                                         ) {
-                                            Text("Confirm Quality & Pay", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text("Confirm Quality", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                                         }
                                         OutlinedButton(
                                             enabled = !isActionLoading,
@@ -311,9 +317,10 @@ fun RetailerOrdersScreen(
                                                 selectedEvidenceUri = null
                                                 disputeTargetOrder = order
                                             },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                                             shape = RoundedCornerShape(10.dp)
                                         ) {
-                                            Text("Raise Dispute", fontSize = 12.sp, color = StatusError)
+                                            Text("Dispute", fontSize = 12.sp, color = StatusError, maxLines = 1, softWrap = false)
                                         }
                                     }
                                 }
@@ -354,7 +361,7 @@ fun RetailerOrdersScreen(
             onDismissRequest = { otpTargetOrder = null },
             title = { Text("Verify Delivery OTP", fontWeight = FontWeight.Bold) },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(
                         text = "Enter the 6-digit delivery OTP for ${target.productName} to begin your 24-hour inspection window.",
                         fontSize = 13.sp,
@@ -396,7 +403,7 @@ fun RetailerOrdersScreen(
             onDismissRequest = { disputeTargetOrder = null },
             title = { Text("Raise Escrow Dispute", fontWeight = FontWeight.Bold, color = StatusError) },
             text = {
-                Column {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(
                         text = "Describe the quality or quantity issue for ${target.productName}. Escrow stays frozen until Tradigoo Operations resolves your claim.",
                         fontSize = 12.5.sp,

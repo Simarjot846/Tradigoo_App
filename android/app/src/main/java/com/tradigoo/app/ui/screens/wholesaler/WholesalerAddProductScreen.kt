@@ -173,7 +173,10 @@ fun WholesalerAddProductScreen(
                             .clickable(enabled = !isSubmitting) { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.AddPhotoAlternate,
                                 contentDescription = null,
@@ -183,9 +186,10 @@ fun WholesalerAddProductScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Select product photo from gallery (Max 5 MB)",
-                                fontSize = 13.sp,
+                                fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = TradigooNavy
+                                color = TradigooNavy,
+                                maxLines = 2
                             )
                         }
                     }
@@ -383,5 +387,7 @@ fun WholesalerAddProductScreen(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(88.dp))
     }
 }
