@@ -11,6 +11,7 @@ import { Package, ArrowRight, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
+import { authFetch } from '@/lib/auth-fetch';
 
 const QRScanner = dynamic(
   () => import('@/components/qr-scanner').then((mod) => mod.QRScanner),
@@ -36,7 +37,7 @@ function MyOrdersContent() {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      const res = await fetch(`/api/orders?role=buyer&userId=${user.id}&limit=50`, {
+      const res = await authFetch(`/api/orders?role=buyer&userId=${encodeURIComponent(user.id)}&limit=50`, {
         cache: 'no-store',
       });
       const data = await res.json();
@@ -55,7 +56,7 @@ function MyOrdersContent() {
 
   const handleConfirmDelivery = async (orderId: string) => {
     try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
+      const res = await authFetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'completed' }),
@@ -66,6 +67,22 @@ function MyOrdersContent() {
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'completed' } : o)));
     } catch (err: any) {
       toast.error(err?.message || 'Failed to update order status.');
+    }
+  };
+
+  const handleQrDelivered = async (orderId: string) => {
+    try {
+      const res = await authFetch(`/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'delivered' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Could not mark parcel delivered');
+      toast.success('Delivery confirmed via QR scan.');
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'delivered' } : o)));
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to verify delivery status.');
     }
   };
 
@@ -93,8 +110,8 @@ function MyOrdersContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100">
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+    <div className="min-h-screen pb-24 md:pb-8 bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
             <Package className="w-7 h-7 text-blue-600" />
@@ -179,9 +196,7 @@ function MyOrdersContent() {
                           expectedDetails={{}}
                           onVerify={(success) => {
                             if (success) {
-                              setOrders((prev) =>
-                                prev.map((o) => (o.id === order.id ? { ...o, status: 'delivered' } : o))
-                              );
+                              handleQrDelivered(order.id);
                             }
                           }}
                         />

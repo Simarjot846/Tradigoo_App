@@ -101,6 +101,15 @@ export default function ProductDetailClient() {
       toast.error(`Minimum order quantity is ${moq} ${product.unit || 'units'}.`);
       return;
     }
+    if (user?.id && product.seller_id === user.id) {
+      toast.error('You cannot place an order for your own product listing.');
+      return;
+    }
+    if (user?.role === 'wholesaler') {
+      toast.info('Switch to a Retailer account to place wholesale orders.');
+      return;
+    }
+    const expectedMarginPct = Number(product.expected_margin || 18);
     sessionStorage.setItem(
       'pendingOrder',
       JSON.stringify({
@@ -110,10 +119,13 @@ export default function ProductDetailClient() {
         seller_id: product.seller_id,
         quantity,
         unit_price: unitPrice,
+        unit: product.unit || 'unit',
+        image_url: product.image_url || null,
         subtotal: pricing.taxableAmount,
         gst_rate: pricing.gstRate,
         gst_amount: pricing.gstAmount,
         total_amount: pricing.totalAmount,
+        expected_profit: Math.round(pricing.taxableAmount * (expectedMarginPct / 100)),
       })
     );
     if (!user) {
@@ -313,10 +325,10 @@ export default function ProductDetailClient() {
                   type="button"
                   onClick={handlePlaceOrder}
                   disabled={quantity < moq}
-                  className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                  className="flex-1 h-12 bg-[#1E3A8A] hover:bg-blue-800 text-white font-semibold"
                 >
-                  <ShieldCheck className="w-4 h-4 mr-2" />
-                  Place Escrow Order
+                  <ShieldCheck className="w-4 h-4 mr-2 text-amber-300" />
+                  Buy Now (Escrow)
                 </Button>
                 <Button
                   type="button"

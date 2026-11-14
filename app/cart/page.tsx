@@ -1,6 +1,8 @@
 'use client';
 
 import { useAuth } from '@/lib/auth-context';
+import { useCart } from '@/lib/cart-context';
+import { authFetch } from '@/lib/auth-fetch';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { calculateCartTotals, calculateItemPricing } from '@/lib/tax';
 import { useState, useEffect, useCallback } from 'react';
@@ -13,7 +15,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 function CartContent() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { refreshCart } = useCart();
   const router = useRouter();
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,14 +24,17 @@ function CartContent() {
 
   const fetchCart = useCallback(async () => {
     try {
-      const res = await fetch('/api/cart', { cache: 'no-store' });
+      const res = await authFetch('/api/cart', { cache: 'no-store' });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Could not load cart items.');
+      }
       if (Array.isArray(data)) {
         setCartItems(data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching cart:', error);
-      toast.error('Could not load cart items.');
+      toast.error(error?.message || 'Could not load cart items.');
     } finally {
       setLoading(false);
     }
@@ -53,14 +59,14 @@ function CartContent() {
     );
 
     try {
-      const res = await fetch('/api/cart', {
+      const res = await authFetch('/api/cart', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: item.id, quantity: newQuantity }),
       });
       const payload = await res.json();
       if (!res.ok) throw new Error(payload?.error || 'Update failed');
-      fetchCart();
+      await Promise.all([fetchCart(), refreshCart()]);
     } catch (error: any) {
       setCartItems(oldItems);
       toast.error(error?.message || 'Failed to update quantity.');
@@ -71,8 +77,9 @@ function CartContent() {
     const oldItems = [...cartItems];
     setCartItems((items) => items.filter((item) => item.id !== id));
     try {
-      const res = await fetch(`/api/cart?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const res = await authFetch(`/api/cart?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
+      await refreshCart();
       toast.success('Item removed from cart.');
     } catch {
       setCartItems(oldItems);
@@ -81,18 +88,17 @@ function CartContent() {
   };
 
   const handleCheckout = async () => {
+    if (checkoutLoading) return;
     setCheckoutLoading(true);
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' });
+      const res = await authFetch('/api/checkout', { method: 'POST' });
       const data = await res.json();
 
-      if (data.success) {
+      if (res.ok && data.success) {
+        setCartItems([]);
+        await Promise.all([refreshCart(), refreshUser().catch(() => {})]);
         toast.success('Order placed securely in Tradigoo Escrow.');
-        if (data.orderIds && data.orderIds.length === 1) {
-          router.push(`/order/${data.orderIds[0]}`);
-        } else {
-          router.push('/my-orders');
-        }
+        router.push('/my-orders');
       } else {
         toast.error(data.error || 'Checkout failed.');
       }

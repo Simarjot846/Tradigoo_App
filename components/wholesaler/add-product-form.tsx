@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Loader2, Upload, Camera, X, ImageIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { authFetch } from '@/lib/auth-fetch';
 import { PRODUCT_CATEGORIES, PRODUCT_UNITS } from '@/components/inventory/product-form-dialog';
 
 export function AddProductForm({ onProductAdded }: { onProductAdded: () => void }) {
@@ -41,7 +42,7 @@ export function AddProductForm({ onProductAdded }: { onProductAdded: () => void 
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/products/upload', { method: 'POST', credentials: 'include', body: fd });
+      const res = await authFetch('/api/products/upload', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error || 'Upload failed');
       setImageUrl(data.url);
@@ -60,9 +61,8 @@ export function AddProductForm({ onProductAdded }: { onProductAdded: () => void 
     if (uploading) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/products', {
+      const res = await authFetch('/api/products', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,

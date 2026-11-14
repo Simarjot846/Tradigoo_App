@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createServiceClient, createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 import { calculateItemPricing } from '@/lib/tax';
 
 export async function POST(req: Request) {
@@ -7,14 +8,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { seller_id, product_id, quantity } = body;
 
-    const supabaseAuth = await createClient();
-    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser();
-
-    if (authError || !authUser) {
+    const session = await getAuthenticatedSession();
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized. Please log in.' }, { status: 401 });
     }
 
-    const buyer_id = authUser.id;
+    const buyer_id = session.userId;
     const supabase = createServiceClient();
 
     const isProductUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product_id || '');
@@ -33,6 +32,9 @@ export async function POST(req: Request) {
     }
     if (!product.is_active) {
       return NextResponse.json({ error: 'This product is currently unavailable.' }, { status: 400 });
+    }
+    if (product.seller_id === buyer_id) {
+      return NextResponse.json({ error: 'You cannot place an order for your own product.' }, { status: 400 });
     }
 
     const qty = Math.floor(Number(quantity) || 0);

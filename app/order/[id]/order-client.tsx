@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase-client';
+import { authFetch } from '@/lib/auth-fetch';
 
 const VideoRecorder = dynamic(
   () => import('@/components/video-recorder').then((mod) => mod.VideoRecorder),
@@ -80,15 +80,12 @@ export default function OrderTrackingClient() {
     }
 
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, product:products(name, category, image_url, unit)')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching order:', error);
+      const res = await authFetch(`/api/orders/${encodeURIComponent(id)}`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Error fetching order:', data?.error || res.status);
       } else if (data) {
         setOrderData({
           ...data,
@@ -160,7 +157,7 @@ export default function OrderTrackingClient() {
   const progress = ((currentStepIndex + 1) / statusSteps.length) * 100;
 
   const updateOrderViaApi = async (targetStatus: string, successToast: string) => {
-    const res = await fetch(`/api/orders/${orderData.id}/status`, {
+    const res = await authFetch(`/api/orders/${orderData.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: targetStatus }),
@@ -218,7 +215,7 @@ export default function OrderTrackingClient() {
         formData.append('file', videoBlob, 'evidence.mp4');
         formData.append('orderId', orderData.id);
 
-        const response = await fetch('/api/disputes/upload', {
+        const response = await authFetch('/api/disputes/upload', {
           method: 'POST',
           body: formData,
         });
@@ -227,17 +224,19 @@ export default function OrderTrackingClient() {
         evidenceUrl = result.url;
       }
 
-      const supabase = createClient();
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-          status: 'disputed',
-          dispute_reason: disputeReason.trim(),
-          dispute_evidence: evidenceUrl ? [evidenceUrl] : [],
-        })
-        .eq('id', orderData.id);
-
-      if (orderError) throw orderError;
+      const raiseRes = await authFetch('/api/disputes/raise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: orderData.id,
+          reason: disputeReason.trim(),
+          evidenceUrls: evidenceUrl ? [evidenceUrl] : [],
+        }),
+      });
+      const raiseData = await raiseRes.json();
+      if (!raiseRes.ok) {
+        throw new Error(raiseData?.error || 'Failed to submit dispute');
+      }
 
       toast.success('Dispute submitted for operations review.');
       await fetchOrder();

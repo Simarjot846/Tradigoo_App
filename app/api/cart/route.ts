@@ -1,13 +1,12 @@
-import { createClient, createServiceClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  const session = await getAuthenticatedSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -38,7 +37,7 @@ export async function GET() {
         )
       )
     `)
-    .eq('user_id', user.id)
+    .eq('user_id', session.userId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -49,10 +48,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  const session = await getAuthenticatedSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -67,7 +64,7 @@ export async function POST(request: Request) {
   const admin = createServiceClient();
   const { data: product, error: prodError } = await admin
     .from('products')
-    .select('id, min_order_quantity, is_active')
+    .select('id, seller_id, min_order_quantity, is_active')
     .eq('id', product_id)
     .maybeSingle();
 
@@ -77,31 +74,35 @@ export async function POST(request: Request) {
   if (!product.is_active) {
     return NextResponse.json({ error: 'This product is currently unavailable' }, { status: 400 });
   }
+  if (product.seller_id === session.userId) {
+    return NextResponse.json({ error: 'You cannot add your own product listing to cart.' }, { status: 400 });
+  }
 
   const moq = Math.max(1, Number(product.min_order_quantity || 1));
 
-  const { data: existingItem } = await supabase
+  const { data: existingItem } = await admin
     .from('cart_items')
     .select('id, quantity')
-    .eq('user_id', user.id)
+    .eq('user_id', session.userId)
     .eq('product_id', product_id)
     .maybeSingle();
 
   if (existingItem) {
     const newQty = existingItem.quantity + Math.floor(qty);
-    const { error: updateError } = await supabase
+    const { error: updateError } = await admin
       .from('cart_items')
       .update({ quantity: Math.max(moq, newQty) })
-      .eq('id', existingItem.id);
+      .eq('id', existingItem.id)
+      .eq('user_id', session.userId);
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
   } else {
     const initialQty = Math.max(moq, Math.floor(qty));
-    const { error: insertError } = await supabase
+    const { error: insertError } = await admin
       .from('cart_items')
       .insert({
-        user_id: user.id,
+        user_id: session.userId,
         product_id,
         quantity: initialQty,
       });
@@ -114,10 +115,8 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  const session = await getAuthenticatedSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -129,19 +128,24 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
+  const admin = createServiceClient();
+
   if (qty <= 0) {
-    const { error } = await supabase.from('cart_items').delete().eq('id', id).eq('user_id', user.id);
+    const { error } = await admin.from('cart_items').delete().eq('id', id).eq('user_id', session.userId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true, deleted: true });
   }
 
-  // Enforce MOQ
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from('cart_items')
     .select('id, product:products(min_order_quantity)')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', session.userId)
     .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ error: 'Cart item not found' }, { status: 404 });
+  }
 
   const moq = Math.max(1, Number((existing as any)?.product?.min_order_quantity || 1));
   if (qty < moq) {
@@ -151,11 +155,11 @@ export async function PUT(request: Request) {
     );
   }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from('cart_items')
     .update({ quantity: Math.floor(qty) })
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', session.userId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -165,10 +169,8 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  const session = await getAuthenticatedSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -179,11 +181,12 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
   }
 
-  const { error } = await supabase
+  const admin = createServiceClient();
+  const { error } = await admin
     .from('cart_items')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', session.userId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

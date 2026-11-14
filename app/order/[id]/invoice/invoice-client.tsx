@@ -5,8 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
-import { mockUsers } from '@/lib/mock-data';
-import { createClient } from '@/lib/supabase-client';
+import { authFetch } from '@/lib/auth-fetch';
 import { useAuth } from '@/lib/auth-context';
 
 export default function InvoiceClient() {
@@ -40,22 +39,20 @@ export default function InvoiceClient() {
 
             try {
                 if (!user) {
-                    console.warn("[Invoice] No authenticated user found.");
                     if (isMounted) setLoading(false);
                     return;
                 }
 
-                const supabase = createClient();
-                const { data: orderData, error: orderError } = await supabase
-                    .from('orders')
-                    .select(`*, product:products(name, unit)`)
-                    .eq('id', id)
-                    .single();
+                const res = await authFetch(`/api/orders/${encodeURIComponent(id)}`, {
+                    cache: 'no-store',
+                    signal: controller.signal,
+                });
+                const orderData = await res.json();
 
                 if (controller.signal.aborted) return;
 
-                if (orderError || !orderData) {
-                    console.error("Error fetching invoice order:", orderError?.message || orderError);
+                if (!res.ok || !orderData || orderData.error) {
+                    console.error("Error fetching invoice order:", orderData?.error || res.status);
                     if (isMounted) setLoading(false);
                     return;
                 }
@@ -66,20 +63,8 @@ export default function InvoiceClient() {
                         product_name: orderData.product?.name || 'Product',
                         unit: orderData.product?.unit
                     });
-                }
-
-                const { data: profiles } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .in('id', [orderData.buyer_id, orderData.seller_id]);
-
-                if (controller.signal.aborted) return;
-
-                if (isMounted) {
-                    if (profiles) {
-                        setBuyer(profiles.find((p: any) => p.id === orderData.buyer_id) || mockUsers[0]);
-                        setSeller(profiles.find((p: any) => p.id === orderData.seller_id) || mockUsers[1]);
-                    }
+                    setBuyer(orderData.buyer || null);
+                    setSeller(orderData.seller || null);
                     setLoading(false);
                 }
 
@@ -113,13 +98,12 @@ export default function InvoiceClient() {
 
     if (!order) return <div className="p-10 text-center text-red-500">Invoice Information Not Available</div>;
 
-    const displayBuyer = buyer || { name: 'Unknown Buyer', business_name: 'Business', location: 'Unknown' };
-    const displaySeller = seller || { name: 'Unknown Seller', business_name: 'Supplier', location: 'Unknown' };
+    const displayBuyer = buyer || { name: 'Verified Buyer', business_name: 'Retail Partner', location: '' };
+    const displaySeller = seller || { name: 'Verified Supplier', business_name: 'Wholesaler', location: '' };
 
-    const subtotal = order.total_amount;
-    const taxRate = 0.05;
-    const taxAmount = subtotal * taxRate;
-    const grandTotal = subtotal + taxAmount;
+    const subtotal = Number(order.subtotal || ((Number(order.unit_price || 0) * Number(order.quantity || 1)) || order.total_amount || 0));
+    const taxAmount = Number(order.tax_amount ?? Math.max(0, Number(order.total_amount || 0) - subtotal));
+    const grandTotal = Number(order.total_amount || subtotal + taxAmount);
 
     const handlePrint = () => {
         window.print();

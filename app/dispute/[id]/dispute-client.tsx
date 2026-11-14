@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-client';
+import { authFetch } from '@/lib/auth-fetch';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,20 +24,11 @@ export default function DisputeClient() {
             }
 
             try {
-                const supabase = createClient();
-                const { data, error: fetchError } = await supabase
-                    .from('orders')
-                    .select(`
-                        *,
-                        product:products!product_id (name, description),
-                        seller:profiles!seller_id (business_name),
-                        buyer:profiles!buyer_id (business_name)
-                    `)
-                    .eq('id', id)
-                    .single();
+                const res = await authFetch(`/api/orders/${encodeURIComponent(id)}`, { cache: 'no-store' });
+                const data = await res.json();
 
-                if (fetchError || !data) {
-                    setError('Dispute not found or access denied.');
+                if (!res.ok || !data || data.error) {
+                    setError(data?.error || 'Dispute not found or access denied.');
                 } else {
                     setOrder(data);
                 }

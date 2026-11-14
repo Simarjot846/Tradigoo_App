@@ -154,8 +154,8 @@ export function QRScanner({ orderId, expectedDetails, onVerify }: QRScannerProps
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button className="bg-blude-600 hover:bg-blue-500 gap-2">
-                    <Scan className="w-4 h-4" /> Scan Internal QR
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-8 text-xs">
+                    <Scan className="w-3.5 h-3.5" /> Scan Package QR
                 </Button>
             </DialogTrigger>
             <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-md">

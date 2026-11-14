@@ -1,11 +1,12 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, UserRole } from './supabase';
 import { resolveEffectiveRole } from './roles';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -46,8 +47,13 @@ function setCachedProfile(profile: User): void {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const userIdRef = useRef<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    userIdRef.current = user?.id ?? null;
+  }, [user?.id]);
 
   const buildFallbackProfile = useCallback((authUser: SupabaseUser): User => {
     const cached = getCachedProfile(authUser.id);
@@ -134,17 +140,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase, buildFallbackProfile]);
 
+  const syncTrustScore = useCallback(async (userId: string) => {
+    try {
+      const res = await fetch(`/api/trust-score/${encodeURIComponent(userId)}`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data?.score === 'number') {
+        setUser((prev) => {
+          if (!prev || prev.id !== userId) return prev;
+          const updated: User = {
+            ...prev,
+            trust_score: data.score,
+            total_orders: data.totalOrders ?? prev.total_orders,
+            successful_orders: data.completedOrders ?? prev.successful_orders,
+            disputed_orders: data.disputedOrders ?? prev.disputed_orders,
+            gst_verified: typeof data.gstVerified === 'boolean' ? data.gstVerified : prev.gst_verified,
+          };
+          setCachedProfile(updated);
+          return updated;
+        });
+      }
+    } catch {}
+  }, []);
+
   const refreshUser = useCallback(async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.expires_at && session.expires_at * 1000 < Date.now() + 90_000) {
+        await supabase.auth.refreshSession().catch(() => {});
+      }
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         const p = await fetchUserProfile(authUser);
         setUser(p);
+        syncTrustScore(authUser.id);
       } else {
         setUser(null);
       }
     } catch {}
-  }, [supabase, fetchUserProfile]);
+  }, [supabase, fetchUserProfile, syncTrustScore]);
 
   useEffect(() => {
     let mounted = true;
@@ -173,6 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const fullProfile = await fetchUserProfile(authUser);
         if (mounted) {
           setUser(fullProfile);
+          syncTrustScore(authUser.id);
         }
       } catch (err) {
         console.warn('Background profile fetch:', err);
@@ -196,6 +233,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         if (session?.user) {
+          const expiresAtMs = (session.expires_at ?? 0) * 1000;
+          if (expiresAtMs && expiresAtMs < Date.now() + 90_000) {
+            const { data: refreshed } = await supabase.auth.refreshSession();
+            if (refreshed?.session?.user) {
+              await applyUserSession(refreshed.session.user);
+              return;
+            }
+          }
           await applyUserSession(session.user);
           return;
         }
@@ -218,6 +263,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.expires_at && session.expires_at * 1000 < Date.now() + 120_000) {
+            supabase.auth.refreshSession().catch(() => {});
+          }
+        });
+      }
+    };
+
+    const handleSessionExpired = async () => {
+      await supabase.auth.signOut().catch(() => {});
+      setUser(null);
+      setLoading(false);
+      toast.error('Your session expired. Please sign in again.');
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+        router.replace(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('tradigoo:session-expired', handleSessionExpired);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       if (event === 'SIGNED_OUT' || !session?.user) {
@@ -226,7 +294,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       if (session.user) {
-        if (event === 'TOKEN_REFRESHED' && user?.id === session.user.id) {
+        if (event === 'TOKEN_REFRESHED' && userIdRef.current === session.user.id) {
           return;
         }
         await applyUserSession(session.user);
@@ -236,8 +304,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('tradigoo:session-expired', handleSessionExpired);
     };
-  }, [supabase, buildFallbackProfile, fetchUserProfile]);
+  }, [supabase, buildFallbackProfile, fetchUserProfile, syncTrustScore, router]);
 
   const signIn = async (email: string, password: string): Promise<User | null> => {
     setLoading(true);
@@ -258,6 +328,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           const payload = await res.json();
           if (res.ok && payload.user) {
+            if (payload.session?.access_token && payload.session?.refresh_token) {
+              await supabase.auth.setSession({
+                access_token: payload.session.access_token,
+                refresh_token: payload.session.refresh_token,
+              }).catch(() => {});
+            }
             const instantProfile = buildFallbackProfile(payload.user);
             setUser(instantProfile);
             setLoading(false);

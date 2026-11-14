@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { createClient, createServiceClient } from './supabase-server';
 import { resolveEffectiveRole } from './roles';
 import type { User, UserRole } from './supabase';
@@ -14,8 +15,34 @@ export interface AuthenticatedSession {
 export async function getAuthenticatedSession(): Promise<AuthenticatedSession | null> {
   try {
     const supabase = await createClient();
-    const { data: { user: authUser }, error } = await supabase.auth.getUser();
-    if (error || !authUser) {
+    let authUser: SupabaseAuthUser | null = null;
+
+    // 1. Prefer explicit Bearer token from Authorization header (survives cookie size/stale issues)
+    let bearerToken: string | undefined;
+    try {
+      const headerStore = await headers();
+      const rawAuth = headerStore.get('authorization') || headerStore.get('Authorization') || '';
+      if (rawAuth.toLowerCase().startsWith('bearer ')) {
+        bearerToken = rawAuth.slice(7).trim();
+      }
+    } catch {}
+
+    if (bearerToken) {
+      const { data: tokenData, error: tokenError } = await supabase.auth.getUser(bearerToken);
+      if (!tokenError && tokenData?.user) {
+        authUser = tokenData.user;
+      }
+    }
+
+    // 2. Fallback to SSR cookies
+    if (!authUser) {
+      const { data: cookieData, error: cookieError } = await supabase.auth.getUser();
+      if (!cookieError && cookieData?.user) {
+        authUser = cookieData.user;
+      }
+    }
+
+    if (!authUser) {
       return null;
     }
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { authFetch } from '@/lib/auth-fetch';
 import { useCart } from '@/lib/cart-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,8 +68,8 @@ export function BuyerDashboard() {
     }
     setOrdersLoading(true);
     try {
-      const res = await fetch('/api/orders?role=retailer&limit=4', {
-        credentials: 'include',
+      const res = await authFetch('/api/orders?role=retailer&limit=4', {
+        cache: 'no-store',
       });
       if (res.ok) {
         const data = await res.json();
@@ -93,7 +94,7 @@ export function BuyerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 pb-20 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 pb-24 md:pb-12 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
         {/* Hero Search & Welcome Banner */}
         <section className="rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white p-5 sm:p-8 shadow-sm border border-slate-800">

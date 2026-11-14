@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { authFetch } from '@/lib/auth-fetch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProductImage } from '@/components/ui/product-image';
@@ -51,8 +52,8 @@ export function FounderDashboard() {
     setError(null);
     try {
       const [statsRes, usersRes] = await Promise.all([
-        fetch('/api/admin/founder-stats', { credentials: 'include' }),
-        fetch('/api/admin/users', { credentials: 'include' }),
+        authFetch('/api/admin/founder-stats', { cache: 'no-store' }),
+        authFetch('/api/admin/users', { cache: 'no-store' }),
       ]);
 
       if (!statsRes.ok) {
@@ -90,9 +91,8 @@ export function FounderDashboard() {
   ) => {
     setBusyId(`${targetUser.id}:${field}`);
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await authFetch('/api/admin/users', {
         method: 'PATCH',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: targetUser.id,
@@ -124,9 +124,8 @@ export function FounderDashboard() {
     setBusyId(`prod:${product.id}`);
     try {
       const nextActive = !product.is_active;
-      const res = await fetch(`/api/products/${product.id}`, {
+      const res = await authFetch(`/api/products/${product.id}`, {
         method: 'PUT',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: nextActive }),
       });

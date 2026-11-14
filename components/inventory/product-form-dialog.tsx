@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { authFetch } from '@/lib/auth-fetch';
 import { Loader2, Upload, Camera, X, ImageIcon, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const PRODUCT_CATEGORIES = [
@@ -149,9 +150,8 @@ export function ProductFormDialog({
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('/api/products/upload', {
+      const res = await authFetch('/api/products/upload', {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       });
 
@@ -208,9 +208,8 @@ export function ProductFormDialog({
       const endpoint = isEdit ? `/api/products/${product!.id}` : '/api/products';
       const method = isEdit ? 'PUT' : 'POST';
 
-      const res = await fetch(endpoint, {
+      const res = await authFetch(endpoint, {
         method,
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),

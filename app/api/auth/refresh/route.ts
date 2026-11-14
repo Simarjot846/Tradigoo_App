@@ -4,23 +4,40 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { supabase, cookieActions } = await createClientWithCookieCollector();
+    const body = await request.json().catch(() => ({}));
+    const refreshToken =
+      typeof body?.refresh_token === 'string' && body.refresh_token.trim()
+        ? body.refresh_token.trim()
+        : undefined;
 
-    // Attempt to read session — if refresh cookie is present, Supabase server client
-    // should use it to refresh and return a session.
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data, error } = refreshToken
+      ? await supabase.auth.refreshSession({ refresh_token: refreshToken })
+      : await supabase.auth.refreshSession();
 
     if (error) {
-      console.error('Refresh endpoint supabase error:', error);
-      return NextResponse.json({ error: 'Failed to refresh session' }, { status: 500 });
+      const msg = (error.message || '').toLowerCase();
+      const isAuthFailure =
+        msg.includes('refresh') ||
+        msg.includes('session') ||
+        msg.includes('jwt') ||
+        msg.includes('expired') ||
+        error.status === 400 ||
+        error.status === 401;
+      return NextResponse.json(
+        { error: error.message || 'Session expired. Please sign in again.' },
+        { status: isAuthFailure ? 401 : 500 }
+      );
     }
 
-    if (!session) {
+    if (!data?.session) {
       return NextResponse.json({ error: 'No active session' }, { status: 401 });
     }
 
-    const response = NextResponse.json({ session });
+    const response = NextResponse.json({
+      session: data.session,
+      user: data.user,
+    });
 
-    // Apply any Set-Cookie actions recorded by the Supabase client (rotated refresh token)
     if (cookieActions && cookieActions.length) {
       for (const action of cookieActions) {
         try {

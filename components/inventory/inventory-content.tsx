@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { authFetch } from '@/lib/auth-fetch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProductImage } from '@/components/ui/product-image';
@@ -54,6 +55,7 @@ interface InventoryContentProps {
 export default function InventoryContent({ initialProducts }: InventoryContentProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<any[]>(initialProducts || []);
   const [loading, setLoading] = useState(false);
 
@@ -61,6 +63,7 @@ export default function InventoryContent({ initialProducts }: InventoryContentPr
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused'>('all');
 
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<EditableProduct | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
@@ -68,13 +71,19 @@ export default function InventoryContent({ initialProducts }: InventoryContentPr
 
   const userId = user?.id;
 
+  useEffect(() => {
+    if (searchParams.get('action') === 'add') {
+      setAddDialogOpen(true);
+    }
+  }, [searchParams]);
+
   const fetchProducts = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `/api/products?sellerId=${encodeURIComponent(userId)}&includeInactive=true&limit=200`,
-        { credentials: 'include' }
+        { cache: 'no-store' }
       );
       if (!res.ok) throw new Error('Failed to load inventory');
       const data = await res.json();
@@ -113,9 +122,8 @@ export default function InventoryContent({ initialProducts }: InventoryContentPr
   const handleToggleActive = async (product: any) => {
     const nextActive = product.is_active === false;
     try {
-      const res = await fetch(`/api/products/${product.id}`, {
+      const res = await authFetch(`/api/products/${product.id}`, {
         method: 'PUT',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: nextActive }),
       });
@@ -135,9 +143,8 @@ export default function InventoryContent({ initialProducts }: InventoryContentPr
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const response = await fetch(`/api/products/${deleteTarget.id}`, {
+      const response = await authFetch(`/api/products/${deleteTarget.id}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to delete product');
@@ -153,7 +160,7 @@ export default function InventoryContent({ initialProducts }: InventoryContentPr
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-slate-50 dark:bg-zinc-950 transition-colors">
+    <div className="min-h-screen pb-24 md:pb-12 bg-slate-50 dark:bg-zinc-950 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -185,10 +192,19 @@ export default function InventoryContent({ initialProducts }: InventoryContentPr
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <ProductFormDialog onSuccess={fetchProducts}>
+            <ProductFormDialog
+              open={addDialogOpen}
+              onOpenChange={(val) => {
+                setAddDialogOpen(val);
+                if (!val && searchParams.get('action') === 'add') {
+                  router.replace('/inventory', { scroll: false });
+                }
+              }}
+              onSuccess={fetchProducts}
+            >
               <Button className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs sm:text-sm">
                 <Plus className="w-4 h-4 mr-1.5" />
-                Add Product
+                Add SKU
               </Button>
             </ProductFormDialog>
           </div>

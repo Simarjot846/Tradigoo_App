@@ -28,16 +28,48 @@ const memoryCache: Record<string, string> = {};
 
 // ─── Cookie synchronization helper ───────────────────────────────────────────
 
+const COOKIE_CHUNK_SIZE = 3500;
+const MAX_COOKIE_CHUNKS = 8;
+
+function setRawCookie(name: string, value: string, maxAge: number) {
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const secureFlag = isSecure ? '; Secure' : '';
+  document.cookie = `${encodeURIComponent(name)}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secureFlag}`;
+}
+
 function syncToCookie(key: string, value: string | null) {
   if (typeof document === 'undefined') return;
   try {
-    if (value === null) {
-      document.cookie = `${encodeURIComponent(key)}=; Path=/; Max-Age=0; SameSite=Lax`;
+    // Clear existing base cookie and chunks first to avoid stale fragments
+    setRawCookie(key, '', 0);
+    for (let i = 0; i < MAX_COOKIE_CHUNKS; i++) {
+      setRawCookie(`${key}.${i}`, '', 0);
+    }
+
+    if (value === null) return;
+
+    const encoded = encodeURIComponent(value);
+    if (encoded.length <= COOKIE_CHUNK_SIZE) {
+      setRawCookie(key, encoded, 31536000);
     } else {
-      // 1 year max-age for session persistence
-      const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
-      const secureFlag = isSecure ? '; Secure' : '';
-      document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; Path=/; Max-Age=31536000; SameSite=Lax${secureFlag}`;
+      // Split raw value into chunks that fit safely within 4KB cookie limit after encoding
+      const chunks: string[] = [];
+      let current = '';
+      for (let i = 0; i < value.length; i++) {
+        const ch = value[i];
+        const nextEncodedLen = encodeURIComponent(current + ch).length;
+        if (nextEncodedLen > COOKIE_CHUNK_SIZE && current.length > 0) {
+          chunks.push(current);
+          current = ch;
+        } else {
+          current += ch;
+        }
+      }
+      if (current.length > 0) chunks.push(current);
+
+      chunks.slice(0, MAX_COOKIE_CHUNKS).forEach((chunk, index) => {
+        setRawCookie(`${key}.${index}`, encodeURIComponent(chunk), 31536000);
+      });
     }
   } catch {
     // Non-critical cookie failure

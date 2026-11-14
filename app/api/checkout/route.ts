@@ -1,24 +1,24 @@
-import { createClient, createServiceClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 import { calculateItemPricing } from '@/lib/tax';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
+  const session = await getAuthenticatedSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const user = { id: session.userId };
   const admin = createServiceClient();
 
-  // Prevent rapid duplicate checkout clicks within 8 seconds
-  const eightSecondsAgo = new Date(Date.now() - 8000).toISOString();
+  // Prevent rapid duplicate checkout clicks within 5 seconds
+  const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
   const { data: recentOrders } = await admin
     .from('orders')
     .select('id')
     .eq('buyer_id', user.id)
-    .gte('created_at', eightSecondsAgo)
+    .gte('created_at', fiveSecondsAgo)
     .limit(1);
 
   if (recentOrders && recentOrders.length > 0) {

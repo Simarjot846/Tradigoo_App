@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
 import CryptoJS from 'crypto-js';
 import { useAuth } from '@/lib/auth-context';
+import { authFetch } from '@/lib/auth-fetch';
 import { createClient } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
 import { ProductImage } from '@/components/ui/product-image';
@@ -54,11 +55,11 @@ export function SellerDashboard() {
     setError(null);
     try {
       const [prodRes, ordRes] = await Promise.all([
-        fetch(`/api/products?sellerId=${encodeURIComponent(userId)}&includeInactive=true&limit=100`, {
-          credentials: 'include',
+        authFetch(`/api/products?sellerId=${encodeURIComponent(userId)}&includeInactive=true&limit=100`, {
+          cache: 'no-store',
         }),
-        fetch('/api/orders?role=wholesaler&limit=50', {
-          credentials: 'include',
+        authFetch('/api/orders?role=wholesaler&limit=50', {
+          cache: 'no-store',
         }),
       ]);
 
@@ -166,9 +167,8 @@ export function SellerDashboard() {
   const handleMarkShipped = async (orderId: string) => {
     setBusyOrderId(orderId);
     try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
+      const res = await authFetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'shipped',
@@ -213,7 +213,7 @@ export function SellerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 pb-20 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 pb-24 md:pb-12 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xs">

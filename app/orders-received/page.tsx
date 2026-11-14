@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
 import { useAuth } from '@/lib/auth-context';
+import { authFetch } from '@/lib/auth-fetch';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,8 +58,8 @@ function OrdersReceivedContent() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/orders?role=wholesaler&limit=100', {
-        credentials: 'include',
+      const res = await authFetch('/api/orders?role=wholesaler&limit=100', {
+        cache: 'no-store',
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -302,9 +303,8 @@ function ManageOrderDialog({ order, onUpdate }: { order: any; onUpdate: () => vo
   const handleMarkShipped = async () => {
     setUpdating(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}/status`, {
+      const res = await authFetch(`/api/orders/${order.id}/status`, {
         method: 'PATCH',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'shipped',

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { authFetch } from '@/lib/auth-fetch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -67,7 +68,7 @@ export function EmployeeDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/tickets', { credentials: 'include' });
+      const res = await authFetch('/api/tickets', { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load support queue');
       const list = Array.isArray(data) ? data : [];
@@ -119,9 +120,8 @@ export function EmployeeDashboard() {
     if (!selectedTicket) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/tickets/${selectedTicket.id}`, {
+      const res = await authFetch(`/api/tickets/${selectedTicket.id}`, {
         method: 'PATCH',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
