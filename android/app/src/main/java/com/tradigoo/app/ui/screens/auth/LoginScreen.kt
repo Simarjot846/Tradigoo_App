@@ -77,6 +77,8 @@ fun LoginScreen(
                     viewModel.signInWithGoogle(
                         idToken = event.idToken,
                         accessToken = event.accessToken,
+                        refreshToken = event.refreshToken,
+                        expiresAt = event.expiresAt,
                         role = event.role,
                         name = event.name,
                         email = event.email

@@ -23,7 +23,9 @@ sealed class GoogleAuthEvent {
         val accessToken: String?,
         val email: String?,
         val name: String?,
-        val role: UserRole
+        val role: UserRole,
+        val refreshToken: String? = null,
+        val expiresAt: Long? = null
     ) : GoogleAuthEvent()
     data class Error(val message: String) : GoogleAuthEvent()
     object Cancelled : GoogleAuthEvent()
@@ -140,16 +142,29 @@ object GoogleAuthHelper {
         val role = sessionManager.getPendingOAuthRole()
 
         var accessToken: String? = uri.getQueryParameter("access_token")
+        var refreshToken: String? = uri.getQueryParameter("refresh_token")
+        var expiresAt: Long? = uri.getQueryParameter("expires_at")?.toLongOrNull()
+        var expiresIn: Long? = uri.getQueryParameter("expires_in")?.toLongOrNull()
+
         val fragment = uri.fragment
         if (fragment != null) {
             val params = fragment.split("&")
             for (param in params) {
-                val parts = param.split("=")
-                if (parts.size == 2 && parts[0] == "access_token") {
-                    accessToken = Uri.decode(parts[1])
+                val eqIndex = param.indexOf('=')
+                if (eqIndex > 0) {
+                    val key = param.substring(0, eqIndex)
+                    val value = Uri.decode(param.substring(eqIndex + 1))
+                    when (key) {
+                        "access_token" -> accessToken = value
+                        "refresh_token" -> refreshToken = value
+                        "expires_at" -> expiresAt = value.toLongOrNull()
+                        "expires_in" -> expiresIn = value.toLongOrNull()
+                    }
                 }
             }
         }
+
+        val resolvedExpiresAt = expiresAt ?: expiresIn?.let { (System.currentTimeMillis() / 1000L) + it }
 
         if (!accessToken.isNullOrBlank()) {
             _events.tryEmit(
@@ -158,7 +173,9 @@ object GoogleAuthHelper {
                     accessToken = accessToken,
                     email = null,
                     name = null,
-                    role = role
+                    role = role,
+                    refreshToken = refreshToken,
+                    expiresAt = resolvedExpiresAt
                 )
             )
             return true

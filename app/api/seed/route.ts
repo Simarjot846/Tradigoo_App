@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createServiceClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 import { mockProducts } from '@/lib/mock-data';
 
-export async function POST(request: NextRequest) {
-    const supabase = await createClient();
+export async function POST(_request: NextRequest) {
     const adminSupabase = createServiceClient();
 
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const session = await getAuthenticatedSession();
+        if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         // Fetch Profile to check Role (using admin client to be safe, though User can read own profile)
-        const { data: profile } = await adminSupabase.from('profiles').select('*').eq('id', user.id).single();
+        const { data: profile } = await adminSupabase.from('profiles').select('*').eq('id', session.userId).single();
         if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
         const isRetailer = profile.role === 'retailer';
-        const userId = user.id;
+        const userId = session.userId;
 
         // --- MOCK DATA GENERATION ---
 

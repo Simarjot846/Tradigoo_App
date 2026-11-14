@@ -11,6 +11,7 @@ export async function POST(request: Request) {
 
     let user: any = null;
     let sessionToken: string | null = null;
+    let authSession: any = null;
 
     // 1. Authenticate with accessToken (from Supabase OAuth callback)
     if (accessToken) {
@@ -18,6 +19,18 @@ export async function POST(request: Request) {
       if (!error && data?.user) {
         user = data.user;
         sessionToken = accessToken;
+        if (typeof body.refreshToken === 'string' && body.refreshToken.trim()) {
+          try {
+            const { data: setSessionData } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: body.refreshToken.trim(),
+            });
+            if (setSessionData?.session) {
+              authSession = setSessionData.session;
+              sessionToken = setSessionData.session.access_token;
+            }
+          } catch {}
+        }
       }
     }
 
@@ -30,6 +43,7 @@ export async function POST(request: Request) {
         });
         if (!error && data?.user) {
           user = data.user;
+          authSession = data.session || null;
           sessionToken = data.session?.access_token || null;
         }
       } catch (err) {
@@ -185,6 +199,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       user: apiUser,
       token: sessionToken,
+      session: authSession,
       message: 'Google authentication successful',
     });
 

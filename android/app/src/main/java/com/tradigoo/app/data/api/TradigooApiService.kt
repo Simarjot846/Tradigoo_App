@@ -23,6 +23,11 @@ interface TradigooApiService {
         @Body request: GoogleAuthRequest
     ): Response<SignInResponse>
 
+    @POST("api/auth/refresh")
+    suspend fun refreshSession(
+        @Body request: RefreshTokenRequest
+    ): Response<RefreshTokenResponse>
+
     @POST("api/auth/forgot-password")
     suspend fun forgotPassword(
         @Body request: ForgotPasswordRequest

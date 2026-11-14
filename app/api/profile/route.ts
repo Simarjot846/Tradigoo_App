@@ -14,9 +14,7 @@ export async function GET() {
     const admin = createServiceClient();
     const { data: profile, error } = await admin
       .from('profiles')
-      .select(
-        'id, email, role, name, phone, business_name, location, gst_number, gst_verified, business_type, business_address, pin_code, business_description, trust_score, total_orders, successful_orders, disputed_orders'
-      )
+      .select('*')
       .eq('id', session.userId)
       .maybeSingle();
 
@@ -97,16 +95,55 @@ export async function PATCH(request: Request) {
     if (body.business_description !== undefined) {
       updates.business_description = typeof body.business_description === 'string' ? body.business_description.trim() || null : null;
     }
+    if (body.profile_image_url !== undefined) {
+      updates.profile_image_url = typeof body.profile_image_url === 'string' ? body.profile_image_url.trim() || null : null;
+    }
+    if (body.bank_details !== undefined && typeof body.bank_details === 'object') {
+      updates.bank_details = body.bank_details;
+    }
+    if (body.language_preference === 'en' || body.language_preference === 'hi') {
+      updates.language_preference = body.language_preference;
+    }
+
+    let resolvedRole = session.role;
+    if (body.role !== undefined) {
+      if (session.role === 'founder' || session.role === 'employee') {
+        return NextResponse.json(
+          { error: 'Privileged staff and founder roles cannot be switched from profile settings.' },
+          { status: 403 }
+        );
+      }
+      if (body.role !== 'retailer' && body.role !== 'wholesaler') {
+        return NextResponse.json(
+          { error: 'Only Retailer or Wholesaler business roles can be selected.' },
+          { status: 400 }
+        );
+      }
+      updates.role = body.role;
+      resolvedRole = body.role;
+    }
 
     const admin = createServiceClient();
-    const { data: updated, error } = await admin
+    let { data: updated, error } = await admin
       .from('profiles')
       .update(updates)
       .eq('id', session.userId)
-      .select(
-        'id, email, role, name, phone, business_name, location, gst_number, gst_verified, business_type, business_address, pin_code, business_description, trust_score, total_orders, successful_orders, disputed_orders'
-      )
+      .select('*')
       .single();
+
+    if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('column'))) {
+      const safeUpdates = { ...updates };
+      delete safeUpdates.language_preference;
+      delete safeUpdates.bank_details;
+      const retry = await admin
+        .from('profiles')
+        .update(safeUpdates)
+        .eq('id', session.userId)
+        .select('*')
+        .single();
+      updated = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -116,7 +153,7 @@ export async function PATCH(request: Request) {
       success: true,
       user: {
         ...updated,
-        role: session.role,
+        role: resolvedRole,
       },
     });
   } catch (err: any) {

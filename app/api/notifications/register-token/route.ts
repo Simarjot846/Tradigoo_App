@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createServiceClient, createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 
 export async function POST(req: Request) {
     try {
@@ -13,10 +14,9 @@ export async function POST(req: Request) {
         // Try getting authenticated user if available
         let effectiveUserId = userId;
         try {
-            const supabaseAuth = await createClient();
-            const { data: { user } } = await supabaseAuth.auth.getUser();
-            if (user?.id) {
-                effectiveUserId = user.id;
+            const session = await getAuthenticatedSession();
+            if (session?.userId) {
+                effectiveUserId = session.userId;
             }
         } catch {
             // Ignore auth lookup failure for anonymous / initial launch device registrations

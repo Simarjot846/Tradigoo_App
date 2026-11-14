@@ -1,10 +1,13 @@
 package com.tradigoo.app
 
+import com.tradigoo.app.data.local.JwtUtils
 import com.tradigoo.app.domain.model.CartItem
 import com.tradigoo.app.domain.model.Order
 import com.tradigoo.app.domain.model.TaxCalculator
 import com.tradigoo.app.domain.model.UserRole
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TradigooCoreUnitTest {
@@ -94,5 +97,18 @@ class TradigooCoreUnitTest {
         assertEquals("completed", makeOrder("PAYMENT_RELEASED").normalizedStatus())
         assertEquals("completed", makeOrder("completed").normalizedStatus())
         assertEquals("disputed", makeOrder("disputed").normalizedStatus())
+    }
+
+    @Test
+    fun `jwtUtils decodes exp claim and detects expired or near-expiry tokens`() {
+        // Header: {"alg":"HS256","typ":"JWT"} -> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        // Payload: {"sub":"usr_1","exp":2000000000} -> eyJzdWIiOiJ1c3JfMSIsImV4cCI6MjAwMDAwMDAwMH0
+        val sampleJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfMSIsImV4cCI6MjAwMDAwMDAwMH0.sig"
+
+        assertEquals(2000000000L, JwtUtils.extractExpiryEpochSeconds(sampleJwt))
+        assertFalse(JwtUtils.isExpiringSoon(sampleJwt, bufferSeconds = 90L, nowEpochSec = 1999999000L))
+        assertTrue(JwtUtils.isExpiringSoon(sampleJwt, bufferSeconds = 90L, nowEpochSec = 1999999950L))
+        assertTrue(JwtUtils.isExpiringSoon(sampleJwt, bufferSeconds = 90L, nowEpochSec = 2000000500L))
+        assertEquals(null, JwtUtils.extractExpiryEpochSeconds("not-a-jwt"))
     }
 }

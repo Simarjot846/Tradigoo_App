@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 
-export async function GET(request: NextRequest) {
-    const supabase = await createClient();
-
+export async function GET(_request: NextRequest) {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const session = await getAuthenticatedSession();
+        if (!session) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const supabase = createServiceClient();
         // Fetch user location to "personalize"
-        const { data: profile } = await supabase.from('profiles').select('location').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('location').eq('id', session.userId).single();
         const location = profile?.location || 'General';
 
         // Mock AI Logic (Rule-based)

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TrustScoreCard } from '@/components/ui/trust-score-card';
-import { createClient } from '@/lib/supabase-client';
+import { authFetch } from '@/lib/auth-fetch';
 import { Building2, Landmark, CheckCircle2, Clock, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,10 +55,10 @@ export function TrustGstForm({ profile, onUpdate }: TrustGstFormProps) {
 
     setSaving(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('profiles')
-        .update({
+      const res = await authFetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           gst_number: cleanedGstin || null,
           bank_details: {
             pan: pan.trim().toUpperCase() || null,
@@ -66,11 +66,13 @@ export function TrustGstForm({ profile, onUpdate }: TrustGstFormProps) {
             account_number: accountNumber.trim() || null,
             ifsc: ifsc.trim().toUpperCase() || null,
           },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', profile.id);
+        }),
+      });
 
-      if (error) throw error;
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload?.error || 'Failed to save compliance details');
+      }
 
       toast.success(
         profile?.gst_verified

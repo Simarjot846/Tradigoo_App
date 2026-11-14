@@ -6,7 +6,7 @@ import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase-client"
+import { authFetch } from "@/lib/auth-fetch"
 import {
     Form,
     FormControl,
@@ -54,24 +54,28 @@ export function PersonalInfoForm({ profile, onUpdate }: { profile: any, onUpdate
 
     async function onSubmit(data: PersonalFormValues) {
         setIsLoading(true);
-        const supabase = createClient();
 
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .update(data)
-                .eq('id', profile.id);
+            const res = await authFetch('/api/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: data.name,
+                    phone: data.phone,
+                    location: data.location,
+                    language_preference: data.language_preference,
+                }),
+            });
 
-            if (error) throw error;
+            if (!res.ok) {
+                const payload = await res.json().catch(() => ({}));
+                throw new Error(payload?.error || "Failed to update profile.");
+            }
 
             toast.success("Profile updated successfully!");
             onUpdate();
         } catch (error: any) {
-            console.error("Full Error Object:", error);
-            console.error("Error Message:", error.message);
-            console.error("Error Details:", error.details);
-            console.error("Profile ID:", profile.id);
-
+            console.error("Failed to update personal info:", error);
             toast.error(error.message || "Failed to update profile.");
         } finally {
             setIsLoading(false);

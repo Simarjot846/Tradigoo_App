@@ -27,20 +27,71 @@ class SessionManager(context: Context) {
 
     fun saveAuthToken(token: String) {
         if (token.isNotBlank()) {
-            prefs.edit().putString(KEY_AUTH_TOKEN, token).apply()
+            val inferredExp = JwtUtils.extractExpiryEpochSeconds(token)
+            prefs.edit().apply {
+                putString(KEY_AUTH_TOKEN, token)
+                if (inferredExp != null) {
+                    putLong(KEY_TOKEN_EXPIRES_AT, inferredExp)
+                }
+            }.apply()
         }
+    }
+
+    fun saveSessionTokens(
+        accessToken: String,
+        refreshToken: String? = null,
+        expiresAtSec: Long? = null
+    ) {
+        prefs.edit().apply {
+            if (accessToken.isNotBlank()) {
+                putString(KEY_AUTH_TOKEN, accessToken)
+            }
+            if (!refreshToken.isNullOrBlank()) {
+                putString(KEY_REFRESH_TOKEN, refreshToken)
+            }
+            val effectiveExp = expiresAtSec ?: JwtUtils.extractExpiryEpochSeconds(accessToken)
+            if (effectiveExp != null && effectiveExp > 0L) {
+                putLong(KEY_TOKEN_EXPIRES_AT, effectiveExp)
+            }
+        }.apply()
     }
 
     fun getAuthToken(): String? {
         return prefs.getString(KEY_AUTH_TOKEN, null)?.takeIf { it.isNotBlank() }
     }
 
+    fun getRefreshToken(): String? {
+        return prefs.getString(KEY_REFRESH_TOKEN, null)?.takeIf { it.isNotBlank() }
+    }
+
+    fun getTokenExpiresAt(): Long? {
+        val value = prefs.getLong(KEY_TOKEN_EXPIRES_AT, 0L)
+        return if (value > 0L) value else null
+    }
+
+    fun isAccessTokenExpiringSoon(bufferSeconds: Long = 90L): Boolean {
+        val token = getAuthToken() ?: return !getRefreshToken().isNullOrBlank()
+        return JwtUtils.isExpiringSoon(
+            jwt = token,
+            explicitExpiresAtSec = getTokenExpiresAt(),
+            bufferSeconds = bufferSeconds
+        )
+    }
+
     fun clearAuthToken() {
-        prefs.edit().remove(KEY_AUTH_TOKEN).apply()
+        prefs.edit()
+            .remove(KEY_AUTH_TOKEN)
+            .remove(KEY_REFRESH_TOKEN)
+            .remove(KEY_TOKEN_EXPIRES_AT)
+            .apply()
     }
 
     fun hasValidToken(): Boolean {
         return !getAuthToken().isNullOrBlank()
+    }
+
+    fun hasRefreshableSession(): Boolean {
+        return !getAuthToken().isNullOrBlank() || !getRefreshToken().isNullOrBlank()
     }
 
     fun saveUser(user: User) {
@@ -75,7 +126,7 @@ class SessionManager(context: Context) {
     }
 
     fun isLoggedIn(): Boolean {
-        return getUser() != null && hasValidToken()
+        return getUser() != null && hasRefreshableSession()
     }
 
     fun saveFcmToken(token: String) {
@@ -106,6 +157,8 @@ class SessionManager(context: Context) {
     companion object {
         private const val PREFS_NAME = "tradigoo_secure_session"
         private const val KEY_AUTH_TOKEN = "key_auth_token"
+        private const val KEY_REFRESH_TOKEN = "key_refresh_token"
+        private const val KEY_TOKEN_EXPIRES_AT = "key_token_expires_at"
         private const val KEY_USER = "key_user"
         private const val KEY_USER_ROLE = "key_user_role"
         private const val KEY_SELECTED_ROLE = "key_selected_role"

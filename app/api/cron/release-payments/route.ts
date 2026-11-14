@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
 
-export async function GET(request: NextRequest) {
-    const supabase = await createClient();
+export async function GET(_request: NextRequest) {
+    const supabase = createServiceClient();
 
     try {
         const now = new Date().toISOString();
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
         const { data: expiredOrders, error: findError } = await supabase
             .from('orders')
             .select('id, buyer_id, total_amount')
-            .eq('status', 'INSPECTION_PENDING')
+            .in('status', ['inspection', 'inspection_pending', 'INSPECTION_PENDING'])
             .lt('inspection_deadline', now);
 
         if (findError) throw findError;
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
             return supabase
                 .from('orders')
                 .update({
-                    status: 'PAYMENT_RELEASED',
+                    status: 'completed',
                     updated_at: now
                 })
                 .eq('id', order.id);

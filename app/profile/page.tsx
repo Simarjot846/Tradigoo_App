@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { AuthGuard } from '@/components/auth/auth-guard';
-import { createClient } from '@/lib/supabase-client';
+import { authFetch } from '@/lib/auth-fetch';
 import { ProfileHeader } from '@/components/profile/profile-header';
 import { ProfileTabs } from '@/components/profile/profile-tabs';
 
@@ -14,19 +14,12 @@ function ProfileContent() {
   const fetchProfile = async () => {
     if (!user) return;
     try {
-      const supabase = createClient();
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
-      );
-      const queryPromise = supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      const { data } = (await Promise.race([queryPromise, timeoutPromise])) as any;
-      if (data) {
-        setProfile({ ...data, role: user.role });
+      const res = await authFetch('/api/profile', { cache: 'no-store' });
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload?.user) {
+          setProfile({ ...payload.user, role: user.role });
+        }
       }
       await refreshUser();
     } catch (error) {

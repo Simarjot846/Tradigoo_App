@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Camera, ShieldCheck, TrendingUp, Building2, MapPin } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
+import { authFetch, refreshAccessToken } from '@/lib/auth-fetch';
 import { toast } from 'sonner';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -36,23 +37,13 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
             const filePath = `${user?.id}/${fileName}`;
 
             const supabase = createClient();
-
-            // 1. Upload to 'avatars' bucket (ensure this bucket exists or use 'public')
-            // For now assuming 'dispute-evidence' or a new 'profiles' bucket. 
-            // Let's use 'dispute-evidence' for now as we know it exists, but ideally create 'avatars'
-            // or just store in a general bucket. 
-            // ACTUALLY: Let's assume there is a 'avatars' bucket or we use 'dispute-evidence' temporarily
-            // User requested "Profile Photo ... upload (Supabase Storage)".
-            // I'll try 'avatars' first, if fails handle error. 
-            // Better yet, let's use a standard name.
+            await refreshAccessToken(false);
 
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
 
             if (uploadError) {
-                // Fallback to 'dispute-evidence' for demo if 'avatars' missing
-                // This is a bit hacky but keeps flow moving if user hasn't made bucket
                 throw uploadError;
             }
 
@@ -60,13 +51,17 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
                 .from('avatars')
                 .getPublicUrl(filePath);
 
-            // 2. Update profile
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ profile_image_url: publicUrl })
-                .eq('id', user?.id);
+            // 2. Update profile via authenticated API route
+            const res = await authFetch('/api/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile_image_url: publicUrl }),
+            });
 
-            if (updateError) throw updateError;
+            if (!res.ok) {
+                const payload = await res.json().catch(() => ({}));
+                throw new Error(payload?.error || 'Failed to update profile image');
+            }
 
             toast.success('Profile photo updated!');
             onUpdate();

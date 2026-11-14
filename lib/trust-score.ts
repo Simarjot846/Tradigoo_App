@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
 
 export async function updateTrustScore(userId: string) {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // 1. Fetch Stats
     const { data: profile } = await supabase

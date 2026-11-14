@@ -108,6 +108,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun signInWithGoogle(
         idToken: String? = null,
         accessToken: String? = null,
+        refreshToken: String? = null,
+        expiresAt: Long? = null,
         role: UserRole = getSelectedRole(),
         name: String? = null,
         email: String? = null,
@@ -120,6 +122,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             when (val result = authRepository.authenticateWithGoogle(
                 idToken = idToken,
                 accessToken = accessToken,
+                refreshToken = refreshToken,
+                expiresAt = expiresAt,
                 role = role,
                 name = name,
                 email = email,

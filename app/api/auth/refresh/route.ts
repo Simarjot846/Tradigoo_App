@@ -34,6 +34,9 @@ export async function POST(request: Request) {
     }
 
     const response = NextResponse.json({
+      token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at: data.session.expires_at ?? null,
       session: data.session,
       user: data.user,
     });

@@ -85,6 +85,8 @@ fun RegisterScreen(
                     viewModel.signInWithGoogle(
                         idToken = event.idToken,
                         accessToken = event.accessToken,
+                        refreshToken = event.refreshToken,
+                        expiresAt = event.expiresAt,
                         role = role,
                         name = event.name ?: name.ifBlank { null },
                         email = event.email ?: email.ifBlank { null },

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { User, UserRole } from './supabase';
 import { resolveEffectiveRole } from './roles';
+import { authFetch, refreshAccessToken } from './auth-fetch';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -92,6 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = useCallback(async (authUser: SupabaseUser): Promise<User> => {
     const fallback = buildFallbackProfile(authUser);
     try {
+      await refreshAccessToken(false);
+
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Profile query timeout')), 10000)
       );
@@ -101,7 +104,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', authUser.id)
         .maybeSingle();
 
-      const { data: profile } = (await Promise.race([queryPromise, timeoutPromise])) as any;
+      const result = (await Promise.race([queryPromise, timeoutPromise])) as any;
+      let profile = result?.data;
+      const queryError = result?.error;
+
+      // If PostgREST returned JWT expired or error, refresh & fall back to /api/profile
+      if (queryError) {
+        const msg = String(queryError.message || '').toLowerCase();
+        if (msg.includes('jwt') || msg.includes('expired') || queryError.code === 'PGRST301') {
+          await refreshAccessToken(true);
+        }
+        const apiRes = await authFetch('/api/profile', { cache: 'no-store' }).catch(() => null);
+        if (apiRes?.ok) {
+          const payload = await apiRes.json().catch(() => null);
+          if (payload?.user) {
+            profile = payload.user;
+          }
+        }
+      }
 
       if (!profile) {
         let assignedRole: UserRole = fallback.role;
@@ -167,11 +187,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.expires_at && session.expires_at * 1000 < Date.now() + 90_000) {
-        await supabase.auth.refreshSession().catch(() => {});
+      await refreshAccessToken(false);
+      let { data: { user: authUser }, error } = await supabase.auth.getUser();
+      if (error || !authUser) {
+        const refreshed = await refreshAccessToken(true);
+        if (refreshed) {
+          const retry = await supabase.auth.getUser();
+          authUser = retry.data?.user ?? null;
+        }
       }
-      const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         const p = await fetchUserProfile(authUser);
         setUser(p);
@@ -265,11 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session?.expires_at && session.expires_at * 1000 < Date.now() + 120_000) {
-            supabase.auth.refreshSession().catch(() => {});
-          }
-        });
+        refreshAccessToken(false).catch(() => {});
       }
     };
 
@@ -562,12 +582,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setLoading(true);
     try {
-      const { error: dbError } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', user.id);
+      const res = await authFetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
 
-      if (dbError) throw dbError;
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload?.error || 'Failed to update role');
+      }
 
       await supabase.auth.updateUser({ data: { role: newRole } }).catch(() => {});
 

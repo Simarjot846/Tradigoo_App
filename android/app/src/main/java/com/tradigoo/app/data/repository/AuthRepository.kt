@@ -52,7 +52,11 @@ class AuthRepository(private val context: Context) {
                 )
                 sessionManager.saveUser(user)
                 sessionManager.saveSelectedRole(role)
-                sessionManager.saveAuthToken(token)
+                sessionManager.saveSessionTokens(
+                    accessToken = token,
+                    refreshToken = body.session?.refreshToken,
+                    expiresAtSec = body.session?.expiresAt
+                )
                 Resource.Success(user)
             } else {
                 val errorMsg = body?.error
@@ -118,7 +122,11 @@ class AuthRepository(private val context: Context) {
                 )
                 sessionManager.saveUser(user)
                 sessionManager.saveSelectedRole(role)
-                sessionManager.saveAuthToken(token)
+                sessionManager.saveSessionTokens(
+                    accessToken = token,
+                    refreshToken = body.session?.refreshToken,
+                    expiresAtSec = body.session?.expiresAt
+                )
                 Resource.Success(user)
             } else {
                 val errorMsg = body?.error
@@ -134,6 +142,8 @@ class AuthRepository(private val context: Context) {
     suspend fun authenticateWithGoogle(
         idToken: String? = null,
         accessToken: String? = null,
+        refreshToken: String? = null,
+        expiresAt: Long? = null,
         role: UserRole = getSelectedRole(),
         name: String? = null,
         email: String? = null,
@@ -145,6 +155,7 @@ class AuthRepository(private val context: Context) {
             val req = GoogleAuthRequest(
                 idToken = idToken,
                 accessToken = accessToken,
+                refreshToken = refreshToken,
                 role = role.value,
                 name = name,
                 email = email,
@@ -155,12 +166,18 @@ class AuthRepository(private val context: Context) {
             val response = api.googleAuth(req)
             val body = response.body()
             if (response.isSuccessful && body?.user != null) {
-                val token = body.token?.takeIf { it.isNotBlank() } ?: accessToken?.takeIf { it.isNotBlank() }
+                val token = body.session?.accessToken?.takeIf { it.isNotBlank() }
+                    ?: body.token?.takeIf { it.isNotBlank() }
+                    ?: accessToken?.takeIf { it.isNotBlank() }
                 if (token == null) {
                     return@withContext Resource.Error(
                         "Google session could not be established. Please complete sign-in via browser OAuth or email/password."
                     )
                 }
+
+                val resolvedRefreshToken = body.session?.refreshToken?.takeIf { it.isNotBlank() }
+                    ?: refreshToken?.takeIf { it.isNotBlank() }
+                val resolvedExpiresAt = body.session?.expiresAt ?: expiresAt
 
                 val apiUser = body.user
                 val meta = apiUser.userMetadata ?: emptyMap()
@@ -182,7 +199,11 @@ class AuthRepository(private val context: Context) {
                     gstVerified = (meta["gst_verified"] as? Boolean) ?: false
                 )
                 sessionManager.saveUser(user)
-                sessionManager.saveAuthToken(token)
+                sessionManager.saveSessionTokens(
+                    accessToken = token,
+                    refreshToken = resolvedRefreshToken,
+                    expiresAtSec = resolvedExpiresAt
+                )
                 sessionManager.saveSelectedRole(resolvedRole)
                 Resource.Success(user)
             } else {
@@ -215,7 +236,7 @@ class AuthRepository(private val context: Context) {
 
     suspend fun refreshProfile(): Resource<User> = withContext(Dispatchers.IO) {
         try {
-            if (!sessionManager.hasValidToken()) {
+            if (!sessionManager.hasRefreshableSession()) {
                 return@withContext Resource.Error("No active session token.")
             }
             val response = api.getProfile()

@@ -1,19 +1,22 @@
-import { createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
+    const session = await getAuthenticatedSession();
+    if (!session) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (session.role === 'founder' || session.role === 'employee') {
+        return NextResponse.json({ error: 'Privileged roles cannot be switched.' }, { status: 403 });
+    }
 
-    // Fetch current profile
+    const supabase = createServiceClient();
+
     const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', user.id)
+        .eq('id', session.userId)
         .single();
 
     if (!profile) {
@@ -22,11 +25,10 @@ export async function POST() {
 
     const newRole = profile.role === 'retailer' ? 'wholesaler' : 'retailer';
 
-    // Update role
     const { error } = await supabase
         .from('profiles')
         .update({ role: newRole })
-        .eq('id', user.id);
+        .eq('id', session.userId);
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

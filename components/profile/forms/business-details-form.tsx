@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase-client"
+import { authFetch } from "@/lib/auth-fetch"
 import {
     Form,
     FormControl,
@@ -47,26 +47,23 @@ export function BusinessDetailsForm({ profile, onUpdate }: { profile: any, onUpd
 
     async function onSubmit(data: BusinessFormValues) {
         setIsLoading(true);
-        const supabase = createClient();
 
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .update(data)
-                .eq('id', profile.id);
+            const res = await authFetch('/api/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
 
-            if (error) throw error;
+            if (!res.ok) {
+                const payload = await res.json().catch(() => ({}));
+                throw new Error(payload?.error || "Failed to update details.");
+            }
 
             toast.success("Business details updated!");
             onUpdate();
         } catch (error: any) {
-            console.error("Full Error Object:", error);
-            console.error("Error Message:", error.message);
-            console.error("Error Details:", error.details);
-            console.error("Error Hint:", error.hint);
-            console.error("Profile ID:", profile.id);
-            console.error("Submission Data:", data);
-
+            console.error("Failed to update business details:", error);
             toast.error(error.message || "Failed to update details.");
         } finally {
             setIsLoading(false);

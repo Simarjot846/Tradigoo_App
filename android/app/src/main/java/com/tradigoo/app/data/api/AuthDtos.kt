@@ -2,6 +2,26 @@ package com.tradigoo.app.data.api
 
 import com.google.gson.annotations.SerializedName
 
+data class ApiAuthSession(
+    @SerializedName("access_token") val accessToken: String? = null,
+    @SerializedName("refresh_token") val refreshToken: String? = null,
+    @SerializedName("expires_at") val expiresAt: Long? = null,
+    @SerializedName("expires_in") val expiresIn: Long? = null
+)
+
+data class RefreshTokenRequest(
+    @SerializedName("refresh_token") val refreshToken: String
+)
+
+data class RefreshTokenResponse(
+    @SerializedName("token") val token: String? = null,
+    @SerializedName("refresh_token") val refreshToken: String? = null,
+    @SerializedName("expires_at") val expiresAt: Long? = null,
+    @SerializedName("session") val session: ApiAuthSession? = null,
+    @SerializedName("user") val user: ApiUser? = null,
+    @SerializedName("error") val error: String? = null
+)
+
 data class SignInRequest(
     @SerializedName("email") val email: String,
     @SerializedName("password") val password: String
@@ -10,12 +30,14 @@ data class SignInRequest(
 data class SignInResponse(
     @SerializedName("user") val user: ApiUser?,
     @SerializedName("token") val token: String? = null,
+    @SerializedName("session") val session: ApiAuthSession? = null,
     @SerializedName("error") val error: String? = null
 )
 
 data class GoogleAuthRequest(
     @SerializedName("idToken") val idToken: String? = null,
     @SerializedName("accessToken") val accessToken: String? = null,
+    @SerializedName("refreshToken") val refreshToken: String? = null,
     @SerializedName("role") val role: String = "retailer",
     @SerializedName("name") val name: String? = null,
     @SerializedName("email") val email: String? = null,
@@ -42,6 +64,7 @@ data class UserDataRequest(
 data class SignUpResponse(
     @SerializedName("user") val user: ApiUser?,
     @SerializedName("token") val token: String? = null,
+    @SerializedName("session") val session: ApiAuthSession? = null,
     @SerializedName("message") val message: String?,
     @SerializedName("error") val error: String?
 )

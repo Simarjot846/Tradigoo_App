@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { createServiceClient } from '@/lib/supabase-server';
+import { getAuthenticatedSession } from '@/lib/server-auth';
 import { createRazorpayOrder } from '@/lib/razorpay';
 import { z } from 'zod';
 
@@ -11,16 +12,15 @@ const createOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    const session = await getAuthenticatedSession();
+    if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
+    const userId = session.userId;
+    const supabase = createServiceClient();
 
     // Validate request body
     const body = await request.json();
@@ -62,11 +62,10 @@ export async function POST(request: NextRequest) {
     const totalAmount = product.base_price * quantity;
     const amountInPaise = Math.round(totalAmount * 100); // Convert to paise
 
-    // Create order in database first
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        buyer_id: user.id,
+        buyer_id: userId,
         seller_id: sellerId,
         product_id: productId,
         quantity,
@@ -92,7 +91,7 @@ export async function POST(request: NextRequest) {
       receipt: order.id,
       notes: {
         order_id: order.id,
-        buyer_id: user.id,
+        buyer_id: userId,
         seller_id: sellerId,
         product_id: productId,
       },

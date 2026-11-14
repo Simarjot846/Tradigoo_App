@@ -4,7 +4,49 @@ import { createClient } from '@/lib/supabase-client';
 
 let inflightRefresh: Promise<string | null> | null = null;
 
-async function refreshAccessToken(forceRefresh = false): Promise<string | null> {
+function decodeJwtExpMs(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
+    const decoded = atob(padded);
+    const payload = JSON.parse(decoded);
+    if (typeof payload?.exp === 'number') {
+      return payload.exp * 1000;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpiringSoon(accessToken: string, expiresAtSec?: number | null, bufferMs = 120_000): boolean {
+  const fromSession = expiresAtSec ? expiresAtSec * 1000 : null;
+  const fromJwt = decodeJwtExpMs(accessToken);
+  const expMs = fromJwt || fromSession;
+  if (!expMs) return false;
+  return expMs - Date.now() <= bufferMs;
+}
+
+async function isJwtExpiredErrorResponse(res: Response): Promise<boolean> {
+  if (res.status === 401) return true;
+  if (res.status !== 400 && res.status !== 403 && res.status !== 500) return false;
+  try {
+    const text = (await res.clone().text()).toLowerCase();
+    return (
+      text.includes('jwt expired') ||
+      text.includes('token is expired') ||
+      text.includes('pgrst301') ||
+      text.includes('invalid jwt')
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function refreshAccessToken(forceRefresh = false): Promise<string | null> {
   if (typeof window === 'undefined') return null;
 
   const supabase = createClient();
@@ -12,11 +54,8 @@ async function refreshAccessToken(forceRefresh = false): Promise<string | null> 
   if (!forceRefresh) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        const expiresAtMs = (session.expires_at ?? 0) * 1000;
-        if (!expiresAtMs || expiresAtMs - Date.now() > 90_000) {
-          return session.access_token;
-        }
+      if (session?.access_token && !isTokenExpiringSoon(session.access_token, session.expires_at)) {
+        return session.access_token;
       }
     } catch {}
   }
@@ -71,7 +110,7 @@ async function refreshAccessToken(forceRefresh = false): Promise<string | null> 
  * Authenticated fetch helper that:
  * 1. Proactively refreshes near-expiry Supabase JWTs (single-flight deduplicated).
  * 2. Attaches `Authorization: Bearer <access_token>` and `credentials: 'include'`.
- * 3. Retries once on 401 after refreshing the token; notifies AuthProvider if unrecoverable.
+ * 3. Retries once on 401 or JWT-expired responses after refreshing the token; notifies AuthProvider if unrecoverable.
  */
 export async function authFetch(
   input: RequestInfo | URL,
@@ -93,13 +132,15 @@ export async function authFetch(
     headers: buildHeaders(token),
   });
 
-  if (response.status === 401 && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && (await isJwtExpiredErrorResponse(response))) {
     const freshToken = await refreshAccessToken(true);
     if (freshToken) {
+      const retryHeaders = new Headers(init.headers);
+      retryHeaders.set('Authorization', `Bearer ${freshToken}`);
       response = await fetch(input, {
         ...init,
         credentials: 'include',
-        headers: buildHeaders(freshToken),
+        headers: retryHeaders,
       });
     }
 
